@@ -466,13 +466,19 @@ fi
 # 📋 PASO 4: Listar contenido del archivo (opcional - para información)
 # =============================================================================
 msg "📝 Analizando contenido del archivo comprimido..." "INFO"
+# Desactivar temporalmente el manejo de errores de pipe para evitar SIGPIPE
+set +o pipefail
 TOTAL_FILES=$(tar -tzf "${FILE_PATH_DECOMPRESS}" 2>/dev/null | wc -l)
+set -o pipefail
 msg "📦 Archivos y directorios en el archivo: ${TOTAL_FILES}" "INFO"
 
 # =============================================================================
 # 🚨 PASO 5: Verificar si ya existe el directorio de destino
 # =============================================================================
+# Desactivar temporalmente el manejo de errores de pipe para evitar SIGPIPE
+set +o pipefail
 EXTRACT_DIR_NAME=$(tar -tzf "${FILE_PATH_DECOMPRESS}" 2>/dev/null | head -1 | cut -f1 -d"/")
+set -o pipefail
 FULL_EXTRACT_PATH="${DIR_OUTPUT}/${EXTRACT_DIR_NAME}"
 
 if [[ -d "${FULL_EXTRACT_PATH}" ]]; then
