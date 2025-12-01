@@ -1,0 +1,45 @@
+# Ide Helper
+_ide_helper.php
+
+BACKUPS/*
+
+# Laravel
+/vendor
+/node_modules
+**/node_modules
+/data_docker/mongo
+/data_docker/mysql
+
+# qquitar carpeta
+/stack-facturador-smart/smart1
+
+**/cache
+**/dist
+
+**/vendor
+
+
+.idea
+# Composer
+composer.phar
+#composer.lock
+
+
+# Laravel4
+/bootstrap/compiled.php
+/log/*
+#.env.development.*.php
+#.env.development.php
+
+
+# Ignora los ficheros *.o y *.a *.zip
+*.iso
+*.[ao]
+*.zip
+*.rar
+
+
+# --------------- ficheros ignorados despues del instalacion
+#.env.development.production
+#.env.development.production.back
+#docker-compose.prod.yml
