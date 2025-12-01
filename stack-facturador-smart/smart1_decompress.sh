@@ -473,47 +473,9 @@ set -o pipefail
 msg "📦 Archivos y directorios en el archivo: ${TOTAL_FILES}" "INFO"
 
 # =============================================================================
-# 🚨 PASO 5: Verificar si ya existe el directorio de destino
+# 🚨 PASO 5: Información sobre sobrescritura
 # =============================================================================
-# Desactivar temporalmente el manejo de errores de pipe para evitar SIGPIPE
-set +o pipefail
-EXTRACT_DIR_NAME=$(tar -tzf "${FILE_PATH_DECOMPRESS}" 2>/dev/null | head -1 | cut -f1 -d"/")
-set -o pipefail
-FULL_EXTRACT_PATH="${DIR_OUTPUT}/${EXTRACT_DIR_NAME}"
-
-if [[ -d "${FULL_EXTRACT_PATH}" ]]; then
-  msg "⚠️  ADVERTENCIA: El directorio '${EXTRACT_DIR_NAME}' ya existe en ${DIR_OUTPUT}" "WARNING"
-  echo ""
-  echo -e "${BYellow}Opciones:${Color_Off}"
-  echo -e "  ${Cyan}1)${Color_Off} Sobrescribir (los archivos existentes serán reemplazados)"
-  echo -e "  ${Cyan}2)${Color_Off} Crear backup del directorio existente"
-  echo -e "  ${Cyan}3)${Color_Off} Cancelar operación"
-  echo ""
-  read -p "Seleccione una opción [1-3]: " -r OPTION
-
-  case $OPTION in
-    1)
-      msg "Continuando con sobrescritura..." "WARNING"
-      ;;
-    2)
-      BACKUP_NAME="${EXTRACT_DIR_NAME}_backup_$(date +%Y%m%d_%H%M%S)"
-      msg "Creando backup: ${BACKUP_NAME}" "INFO"
-      mv "${FULL_EXTRACT_PATH}" "${DIR_OUTPUT}/${BACKUP_NAME}" || {
-        msg "Error al crear backup" "ERROR"
-        exit 1
-      }
-      msg "✅ Backup creado exitosamente" "SUCCESS"
-      ;;
-    3)
-      msg "Operación cancelada por el usuario" "INFO"
-      exit 0
-      ;;
-    *)
-      msg "Opción inválida. Cancelando..." "ERROR"
-      exit 1
-      ;;
-  esac
-fi
+msg "ℹ️  Si el directorio 'smart1' ya existe, se sobrescribirá" "INFO"
 
 # =============================================================================
 # 🏗️ PASO 6: Construir el comando de descompresión
@@ -552,7 +514,8 @@ eval "${SHELL_COMMAND} &"
 TAR_PID=$!
 
 # Iniciar monitoreo del progreso en paralelo
-monitor_decompression_progress ${TAR_PID} "${FULL_EXTRACT_PATH}" ${TOTAL_FILES} &
+EXTRACT_PATH="${DIR_OUTPUT}/smart1"
+monitor_decompression_progress ${TAR_PID} "${EXTRACT_PATH}" ${TOTAL_FILES} &
 
 # Esperar a que el proceso de descompresión termine
 wait ${TAR_PID}
@@ -578,16 +541,16 @@ msg "📊 RESUMEN DE LA OPERACIÓN" "SUCCESS"
 msg "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "SUCCESS"
 
 # Verificar que el directorio se extrajo correctamente
-if [[ -d "${FULL_EXTRACT_PATH}" ]]; then
-  msg "✅ Directorio extraído: ${FULL_EXTRACT_PATH}" "SUCCESS"
+if [[ -d "${EXTRACT_PATH}" ]]; then
+  msg "✅ Directorio extraído: ${EXTRACT_PATH}" "SUCCESS"
 
   # Contar archivos extraídos
-  EXTRACTED_FILES=$(find "${FULL_EXTRACT_PATH}" -type f 2>/dev/null | wc -l)
-  EXTRACTED_DIRS=$(find "${FULL_EXTRACT_PATH}" -type d 2>/dev/null | wc -l)
+  EXTRACTED_FILES=$(find "${EXTRACT_PATH}" -type f 2>/dev/null | wc -l)
+  EXTRACTED_DIRS=$(find "${EXTRACT_PATH}" -type d 2>/dev/null | wc -l)
 
   msg "📁 Directorios: ${EXTRACTED_DIRS}" "INFO"
   msg "📄 Archivos: ${EXTRACTED_FILES}" "INFO"
-  msg "📍 Ubicación: ${FULL_EXTRACT_PATH}" "INFO"
+  msg "📍 Ubicación: ${EXTRACT_PATH}" "INFO"
 
   echo ""
   msg "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "SUCCESS"
