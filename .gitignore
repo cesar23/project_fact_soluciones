@@ -10,8 +10,8 @@ BACKUPS/*
 /data_docker/mongo
 /data_docker/mysql
 
-# qquitar carpeta
-/stack-facturador-smart/smart1
+# Excluir carpeta smart1 y archivos grandes
+stack-facturador-smart/smart1/
 
 **/cache
 **/dist

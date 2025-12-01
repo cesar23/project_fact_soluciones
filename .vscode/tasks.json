@@ -1,0 +1,118 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Python [Local ENV]",
+      "type": "process",
+      "windows": {
+        "command": "${env:env_python}/python.exe",
+        "args": ["${file}"]
+      },
+      "linux": {
+        "command": "/usr/bin/node"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Run Python [AppData]",
+      "type": "process",
+      "windows": {
+        "command": "python.exe",
+        "args": ["${file}"]
+      },
+      "linux": {
+        "command": "/usr/bin/node"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Run Node",
+      "type": "process",
+      "windows": {
+        "command": "C:\\Program Files\\nodejs\\node.exe",
+        "args": ["${file}"]
+      },
+      "linux": {
+        "command": "/usr/bin/node"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Run Linux Script",
+      "type": "process",
+      "windows": {
+        "command": "C:\\Program Files\\Git\\bin\\bash.exe",
+        "args": ["${file}"]
+      },
+      "linux": {
+        "command": "/bin/bash",
+        "args": ["${file}"]
+      },
+      "osx": {
+        "command": "/bin/bash",
+        "args": ["${file}"]
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "focus": true,
+        "clear": true
+      },
+      "problemMatcher": {
+        "owner": "bash",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        }
+      },
+      "options": {
+        "cwd": "${fileDirname}"
+      }
+    },
+    {
+      "label": "Run Notas",
+      "type": "shell",
+      "windows": {
+        "command": "${workspaceFolder}\\NOTAS.sh",
+        "args": ["${file}"]
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Run PowerShell",
+      "type": "shell",
+      "windows": {
+        "command": "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "args": ["${file}"]
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}

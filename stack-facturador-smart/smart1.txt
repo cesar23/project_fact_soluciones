@@ -1,0 +1,20 @@
+Ruta del proyecto dentro del servidor: /home/cesar/stack-facturador-smart/smart1
+----------------------------------------------
+URL: fact.rog.pe
+Correo para administrador: admin@fact.rog.pe
+Contraseña para administrador: Iooiur8oLi
+----------------------------------------------
+Acceso remoto a Mysql
+Contraseña para root: WPsOd4xPLL4nGRnOAHJp
+
+----------------------------------------------
+
+Rutas de todos los ficheros de configuracion
+stack proxy: /home/cesar/stack-facturador-smart/proxy/docker-compose.yml
+nginx.conf: /home/cesar/stack-facturador-smart/proxy/fpms/smart1/default
+stack proyecto: /home/cesar/stack-facturador-smart/smart1/docker-compose.yml
+.env: /home/cesar/stack-facturador-smart/smart1/.env
+supervisor.conf: /home/cesar/stack-facturador-smart/smart1/supervisor.conf
+DatabaseSeeder.php: /home/cesar/stack-facturador-smart/smart1/database/seeders/DatabaseSeeder.php
+
+
