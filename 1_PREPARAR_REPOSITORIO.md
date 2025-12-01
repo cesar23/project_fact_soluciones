@@ -6,7 +6,6 @@
 winget install GitHub.GitLFS
 # 0
 sudo apt install git-lfs
- 
 
 # 2. Navegar al proyecto
 cd D:\repos\project_fact_soluciones
@@ -14,19 +13,27 @@ cd D:\repos\project_fact_soluciones
 # 3. Inicializar Git LFS
 git lfs install
 
-# 4. Configurar tracking
+
+# 4. Dar Permisos a los ficheros de compresion (stack-facturador-smart/smart1.tar.gz)
+chmod +x stack-facturador-smart/smart1_compress.sh
+chmod +x stack-facturador-smart/smart1_decompress.sh
+
+# 6. Compando para descomprimir el fichero (stack-facturador-smart/smart1.tar.gz) 
+./stack-facturador-smart/smart1_compress.sh
+
+# 7. Configurar tracking
 git lfs track "stack-facturador-smart/smart1.tar.gz"
 git lfs track "*.tar.gz"
 
-# 5. Agregar configuración
+# 8. Agregar configuración
 git add .gitignore .gitattributes
 git commit -m "Configure gitignore and LFS tracking"
 
-# 6. Agregar proyecto completo
+# 9. Agregar proyecto completo
 git add .
 git status
 
-# 7. Commit y push
+# 10. Commit y push
 git commit -m "Add project files with LFS for large files"
 git push origin master
 ```
@@ -39,17 +46,24 @@ winget install GitHub.GitLFS
 # 0
 sudo apt install git-lfs
 
+# =============
 # Clonar
 git clone git@github.com:cesar23/project_fact_soluciones.git
 
 # 2. Navegar al proyecto
 cd project_fact_soluciones
 
-
-# 2. Inicializar LFS
+# 3. Inicializar LFS
 git lfs install
 
-# 3. Descargar todos los archivos LFS
+# 4. Descargar todos los archivos LFS
 git lfs pull
+
+# 5. Dar Permisos a los ficheros de compresion (stack-facturador-smart/smart1.tar.gz)
+chmod +x stack-facturador-smart/smart1_compress.sh
+chmod +x stack-facturador-smart/smart1_decompress.sh
+
+# 6. Compando para descomprimir el fichero (stack-facturador-smart/smart1.tar.gz) 
+./stack-facturador-smart/smart1_decompress.sh
 
 ```

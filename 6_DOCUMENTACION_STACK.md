@@ -3,7 +3,7 @@
 ## 🎯 Documentación Principal
 
 ### 📖 Documentación Completa
-- **[2_STACK_DOCUMENTATION.md](2_STACK_DOCUMENTATION.md)** - Documentación técnica completa de todos los stacks
+- **[2_STACK_DOCUMENTATION.md](3_STACK_DOCUMENTATION.md)** - Documentación técnica completa de todos los stacks
 - **[README.md](stack-facturador-smart/README.md)** - Guía de inicio rápido y resumen del sistema
 - **[CLAUDE.md](stack-facturador-smart/smart1/CLAUDE.md)** - Guía para desarrolladores (Laravel)
 
