@@ -1,1 +1,2 @@
 *.tar.gz filter=lfs diff=lfs merge=lfs -text
+stack-facturador-smart/smart1.tar.gz filter=lfs diff=lfs merge=lfs -text

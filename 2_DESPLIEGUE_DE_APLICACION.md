@@ -24,43 +24,97 @@ docker network create \
     
 docker network inspect "$NETWORK_NAME" --format='{{json .}}' 
 ```
+## 2. modificar ficheros de configuraicon
+fichero de configuracion `stack-facturador-smart/smart1/.env` con las configuraciones
 
-## 2. Correr el stack del facturador
 ```shell
-cd smart1
-docker compose up -d 
+APP_URL_BASE=fact.solucionessystem.com
+...
+MYSQL_USER=smart1
+MYSQL_PASSWORD=dJj3vgAx6Ra4tOjAODp9
+MYSQL_DATABASE=smart1
+MYSQL_ROOT_PASSWORD=WPsOd4xPLL4nGRnOAHJp
+MYSQL_PORT_HOST=3306
+```
+fichero de configuracion `stack-facturador-smart/smart1/docker-compose.yml` con las configuraciones
+
+```yaml
+services:
+  nginx1:
+    image: rash07/nginx
+    working_dir: /var/www/html
+    # 🧪 Agregado por cesar
+    ports:
+      - "8080:80"
+    environment: # 👇👇
+      VIRTUAL_HOST: fact.solucionessystem.com,*.fact.solucionessystem.com
+```
+
+## 3. Correr el stack del facturador
+```shell
+cd stack-facturador-smart/smart1/
+
+```
+luego de eso corer comandos
+
+```shell
+PATH_INSTALL=$(echo $PWD)
+
+SERVICE_NUMBER=1
+ docker compose up -d
+ # @TODO revisar
+ docker compose exec -T fpm$SERVICE_NUMBER apt-get update
+ docker compose exec -T fpm$SERVICE_NUMBER apt-get install -y libxml2-dev
+ docker compose exec -T fpm$SERVICE_NUMBER docker-php-ext-install soap
+ docker compose exec -T fpm$SERVICE_NUMBER apt-get update
+ docker compose exec -T fpm$SERVICE_NUMBER apt-get install -y libzip-dev
+ docker compose exec -T fpm$SERVICE_NUMBER docker-php-ext-configure zip
+ docker compose exec -T fpm$SERVICE_NUMBER docker-php-ext-install zip
+ docker compose exec -T fpm$SERVICE_NUMBER rm composer.lock
+ docker compose exec -T fpm$SERVICE_NUMBER composer self-update
+ docker compose exec -T fpm$SERVICE_NUMBER composer install
+ docker compose exec -T fpm$SERVICE_NUMBER php artisan migrate:refresh --seed
+ docker compose exec -T fpm$SERVICE_NUMBER php artisan key:generate
+ docker compose exec -T fpm$SERVICE_NUMBER php artisan storage:link
+ docker compose exec -T fpm$SERVICE_NUMBER git checkout .
+
+ rm $PATH_INSTALL/$DIR/database/seeders/DatabaseSeeder.php
+ mv $PATH_INSTALL/$DIR/database/seeders/DatabaseSeeder.php.bk $PATH_INSTALL/$DIR/database/seeders/DatabaseSeeder.php
+
+ echo "configurando permisos"
+ chmod -R 777 "$PATH_INSTALL/$DIR/storage/" "$PATH_INSTALL/$DIR/bootstrap/" "$PATH_INSTALL/$DIR/vendor/"
+
+ echo "configurando Supervisor"
+ docker compose exec -T supervisor$SERVICE_NUMBER service supervisor start
+ docker compose exec -T supervisor$SERVICE_NUMBER supervisorctl reread
+ docker compose exec -T supervisor$SERVICE_NUMBER supervisorctl update
+ docker compose exec -T supervisor$SERVICE_NUMBER supervisorctl start all
 ```
 
 
 
-## 3. Para `development`
-
-usar el fichero `docker-compose.yml` para llos despliegue. este fichwero tiene que usar la network `proxynet`
-
-## 4. Para `Pre Production`
-
-para modo pruebas en producion usar `docker-compose.prod_db.yml` y `docker-compose.prod.yml`
-
-- `docker-compose.prod_db.yml` =  es para solo lebantar la db de simulacion
-- `docker-compose.prod.yml` = donde esta el servicio mongo y el app
-
+## 4. Despues del Despliegue de Stak `Utils`
+- Levantar utilitarios para phpmyadmin `stack-facturador-smart/utils/docker compose.yml`
+- y la confiuracion de `stack-facturador-smart/utils/.env`
 ```shell
-
-# ::::::  si queremos levantar los dos fihceros email
-docker compose -f docker-compose.prod_db.yml -f docker-compose.prod.yml  --env-file .env.production up -d
-
-# ::::::  si queremos parar los dos fihceros email
-docker compose -f docker-compose.prod_db.yml -f docker-compose.prod.yml --env-file .env.production down
-
+...
+MYSQL_USER=smart1
+MYSQL_PASSWORD=dJj3vgAx6Ra4tOjAODp9
+MYSQL_DATABASE=smart1
+MYSQL_ROOT_PASSWORD=WPsOd4xPLL4nGRnOAHJp
+MYSQL_PORT_HOST=3306
 
 ```
 
+## 5. Despliegue de Cloudflare
+editar el fichero `stack-facturador-smart/cloudflare/.env`
 
-## 5. Para `Production`
+despues eso desplegar el stack
 
-en este caso en el servidor ya tenemos instalado la base de datos implementada . por tanto ya no necesitamos el fichero `docker-compose.prod_db.yml`
+```shell
 
-
-- `docker-compose.prod.yml` = donde esta el servicio mongo y el app
+cd stack-facturador-smart/cloudflare
+docker compose up -d
+```
 
 
