@@ -106,7 +106,7 @@ MYSQL_PORT_HOST=3306
 
 ```
 
-## 5. Despliegue de Cloudflare
+## 5. Despliegue de Cloudflare new
 editar el fichero `stack-facturador-smart/cloudflare/.env`
 
 despues eso desplegar el stack
