@@ -65,5 +65,18 @@ chmod +x stack-facturador-smart/smart1_decompress.sh
 
 # 6. Compando para descomprimir el fichero (stack-facturador-smart/smart1.tar.gz) 
 ./stack-facturador-smart/smart1_decompress.sh
+```
 
+## 3. Descargar Cambios de Repositorio en servidor de produccion
+Descartar cambios locales  ya que  lo que nos importa
+- quitar cambios locales
+- descarga los bnuevos cambios ene l servidor
+```shell
+git reset --hard origin/master
+```
+
+AHora puedo descargar los cambios
+
+```shell
+git pull origin master
 ```
