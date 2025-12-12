@@ -251,7 +251,7 @@ get_file_size_bytes() {
 show_progress_bar() {
   local percentage=$1
   local info="${2:-}"
-  local bar_width=30  # Reducido para que se vea mejor en la terminal
+  local bar_width=40  # Aumentado para que se vea mejor
   
   # Limitar el porcentaje entre 0 y 100
   if [[ $percentage -lt 0 ]]; then
@@ -277,6 +277,12 @@ show_progress_bar() {
   for ((i=0; i<filled; i++)); do
     bar="${bar}${block_full}"
   done
+  
+  # Añadir bloques parciales si es necesario
+  if [[ $percentage -gt 0 ]] && [[ $percentage -lt 100 ]]; then
+    bar="${bar}${block_partial}"
+    empty=$((empty - 1))
+  fi
   
   # Añadir bloques vacíos
   for ((i=0; i<empty; i++)); do

@@ -28,7 +28,7 @@ git lfs track "*.tar.gz"
 # 8. Agregar configuración
 git add .
 git commit -m "Configure gitignore and LFS tracking"
-git lfs push origin master
+git lfs push origin master && git push origin master
 
 # 9. Agregar proyecto completo
 git add .
