@@ -21,12 +21,12 @@ chmod +x stack-facturador-smart/smart1_decompress.sh
 # 6. Compando para descomprimir el fichero (stack-facturador-smart/smart1.tar.gz) 
 ./stack-facturador-smart/smart1_compress.sh
 
-# 7. Configurar tracking
+# 7. Configurar tracking (la primera vez)
 git lfs track "stack-facturador-smart/smart1.tar.gz"
 git lfs track "*.tar.gz"
 
 # 8. Agregar configuración
-git add .gitignore .gitattributes
+git add .
 git commit -m "Configure gitignore and LFS tracking"
 git lfs push origin master
 

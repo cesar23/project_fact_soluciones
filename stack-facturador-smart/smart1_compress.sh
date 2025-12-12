@@ -324,10 +324,8 @@ show_progress_bar() {
   local percentage=$1
   local current_size="${2:-}"
   local total_size="${3:-}"
-  local bar_width=50
-  local filled=$((percentage * bar_width / 100))
-  local empty=$((bar_width - filled))
-
+  local bar_width=30  # Reducido para que se vea mejor en la terminal
+  
   # Limitar el porcentaje entre 0 y 100
   if [[ $percentage -lt 0 ]]; then
     percentage=0
@@ -335,17 +333,40 @@ show_progress_bar() {
     percentage=100
   fi
 
-  # Construir la barra de progreso
-  local bar_filled=$(printf "%*s" "$filled" "" | tr ' ' '#')
-  local bar_empty=$(printf "%*s" "$empty" "" | tr ' ' '-')
-
+  # Caracteres para una barra más estética usando bloques Unicode
+  local block_full="█"
+  local block_partial="▓"
+  local block_empty="░"
+  
+  # Calcular bloques llenos y vacíos
+  local filled=$((percentage * bar_width / 100))
+  local empty=$((bar_width - filled))
+  
+  # Construir la barra de progreso con bloques Unicode
+  local bar=""
+  local i
+  
+  # Añadir bloques llenos
+  for ((i=0; i<filled; i++)); do
+    bar="${bar}${block_full}"
+  done
+  
+  # Añadir bloques vacíos
+  for ((i=0; i<empty; i++)); do
+    bar="${bar}${block_empty}"
+  done
+  
+  # Preparar el mensaje con colores y emojis
+  local progress_emoji="🚀"
+  [[ $percentage -eq 100 ]] && progress_emoji="✨"
+  
   # Mostrar la barra con información adicional si está disponible
   if [[ -n "$current_size" ]] && [[ -n "$total_size" ]]; then
-    printf "\r${BGreen}[%s%s]${Color_Off} ${BCyan}%3d%%${Color_Off} ${Yellow}%s / %s${Color_Off}" \
-      "$bar_filled" "$bar_empty" "$percentage" "$current_size" "$total_size"
+    printf "\r${progress_emoji} ${BBlue}│${Color_Off}${BGreen}%s${Color_Off}${BBlue}│${Color_Off} ${BCyan}%3d%%${Color_Off} ${BPurple}%s / %s${Color_Off}" \
+      "$bar" "$percentage" "$current_size" "$total_size"
   else
-    printf "\r${BGreen}[%s%s]${Color_Off} ${BCyan}%3d%%${Color_Off}" \
-      "$bar_filled" "$bar_empty" "$percentage"
+    printf "\r${progress_emoji} ${BBlue}│${Color_Off}${BGreen}%s${Color_Off}${BBlue}│${Color_Off} ${BCyan}%3d%%${Color_Off}" \
+      "$bar" "$percentage"
   fi
 }
 
