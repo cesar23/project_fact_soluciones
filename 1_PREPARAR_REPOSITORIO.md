@@ -57,6 +57,9 @@ cd project_fact_soluciones
 # 3. Inicializar LFS
 git lfs install
 
+# 3.2 deshacer cambios locales
+git fetch origin master && git reset --hard origin/master
+
 # 4. Descargar todos los archivos LFS
 git lfs pull
 
