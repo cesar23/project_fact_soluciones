@@ -1,4 +1,4 @@
-version: '3.7'  # <- Cambiar aquí
+
 services:
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -16,9 +16,11 @@ services:
       retries: 3
       start_period: 10s  # Ahora sí es compatible
     labels:
-      - "com.docker.compose.project=cloudflare-tunnel"
-      - "com.docker.compose.service=cloudflared"
-      - "description=Cloudflare Tunnel - Secure tunnel to the internet"
+      - 'com.docker.compose.stack=secundario'
+      - 'com.docker.compose.project=facturador'
+      - 'com.docker.compose.network=proxynet'
+      - 'com.docker.compose.service=cloudflared'
+
 networks:
   proxynet:
     external: true

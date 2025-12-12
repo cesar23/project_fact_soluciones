@@ -58,37 +58,37 @@ cd stack-facturador-smart/smart1/
 luego de eso corer comandos
 
 ```shell
+# este seria el path: stack-facturador-smart/smart1
 PATH_INSTALL=$(echo $PWD)
 
 SERVICE_NUMBER=1
  docker compose up -d
- # @TODO revisar
- docker compose exec -T fpm$SERVICE_NUMBER apt-get update
- docker compose exec -T fpm$SERVICE_NUMBER apt-get install -y libxml2-dev
- docker compose exec -T fpm$SERVICE_NUMBER docker-php-ext-install soap
- docker compose exec -T fpm$SERVICE_NUMBER apt-get update
- docker compose exec -T fpm$SERVICE_NUMBER apt-get install -y libzip-dev
- docker compose exec -T fpm$SERVICE_NUMBER docker-php-ext-configure zip
- docker compose exec -T fpm$SERVICE_NUMBER docker-php-ext-install zip
- docker compose exec -T fpm$SERVICE_NUMBER rm composer.lock
- docker compose exec -T fpm$SERVICE_NUMBER composer self-update
- docker compose exec -T fpm$SERVICE_NUMBER composer install
- docker compose exec -T fpm$SERVICE_NUMBER php artisan migrate:refresh --seed
- docker compose exec -T fpm$SERVICE_NUMBER php artisan key:generate
- docker compose exec -T fpm$SERVICE_NUMBER php artisan storage:link
- docker compose exec -T fpm$SERVICE_NUMBER git checkout .
+ # ingresar al contenedor
+ docker exec -it smart1-fpm1-1 bash
+ # Aqui ejecutar los comandos dentro del contenedor
+     apt-get update
+     rm composer.lock
+     composer self-update
+     composer install
+     php artisan migrate:refresh --seed
+     php artisan key:generate
+     php artisan storage:link
+ # =============================================================
+ # Correr en el servidro
+ # =============================================================
+ sudo chmod -R 777 "$PATH_INSTALL/storage/" "$PATH_INSTALL/bootstrap/" "$PATH_INSTALL/vendor/"
+ 
+ # =============================================================
+ # Correr en el Supervisor
+ # =============================================================
+ # echo "configurando Supervisor"
+ # smart1-supervisor1-1
+ docker compose exec -T smart1-supervisor1-1 service supervisor start
+ docker compose exec -T smart1-supervisor1-1 supervisorctl reread
+ docker compose exec -T smart1-supervisor1-1 supervisorctl update
+ docker compose exec -T smart1-supervisor1-1 supervisorctl start all
+ 
 
- rm $PATH_INSTALL/$DIR/database/seeders/DatabaseSeeder.php
- mv $PATH_INSTALL/$DIR/database/seeders/DatabaseSeeder.php.bk $PATH_INSTALL/$DIR/database/seeders/DatabaseSeeder.php
-
- echo "configurando permisos"
- chmod -R 777 "$PATH_INSTALL/$DIR/storage/" "$PATH_INSTALL/$DIR/bootstrap/" "$PATH_INSTALL/$DIR/vendor/"
-
- echo "configurando Supervisor"
- docker compose exec -T supervisor$SERVICE_NUMBER service supervisor start
- docker compose exec -T supervisor$SERVICE_NUMBER supervisorctl reread
- docker compose exec -T supervisor$SERVICE_NUMBER supervisorctl update
- docker compose exec -T supervisor$SERVICE_NUMBER supervisorctl start all
 ```
 
 
@@ -103,7 +103,11 @@ MYSQL_PASSWORD=dJj3vgAx6Ra4tOjAODp9
 MYSQL_DATABASE=smart1
 MYSQL_ROOT_PASSWORD=WPsOd4xPLL4nGRnOAHJp
 MYSQL_PORT_HOST=3306
-
+```
+Desplegar aplicacion
+```shell
+cd stack-facturador-smart/utils
+docker compose up -d
 ```
 
 ## 5. Despliegue de Cloudflare new
@@ -117,4 +121,15 @@ cd stack-facturador-smart/cloudflare
 docker compose up -d
 ```
 
+## 6. Despliegue de  ProxyManagger
+editar el fichero `stack-facturador-smart/npm/.env`
+
+despues eso desplegar el stack
+
+```shell
+
+cd stack-facturador-smart/npm
+docker compose up -d
+```
+ingresar a la url: http://192.168.0.65:81
 

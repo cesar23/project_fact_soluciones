@@ -30,9 +30,11 @@ services:
       retries: 3
       start_period: 10s
     labels:
-      - "com.docker.compose.project=nginx-proxy-manager"
-      - "com.docker.compose.service=npm"
-      - "description=Nginx Proxy Manager - Reverse Proxy with SSL"
+      - 'com.docker.compose.stack=secundario'
+      - 'com.docker.compose.project=facturador'
+      - 'com.docker.compose.network=proxynet'
+      - 'com.docker.compose.service=proxy-manager'
+
 
 networks:
   proxynet:

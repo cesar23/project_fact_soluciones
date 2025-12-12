@@ -39,7 +39,3 @@ composer.phar
 *.rar
 
 
-# --------------- ficheros ignorados despues del instalacion
-#.env.development.production
-#.env.development.production.back
-#docker-compose.prod.yml
