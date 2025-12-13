@@ -110,6 +110,31 @@ cd stack-facturador-smart/utils
 docker compose up -d
 ```
 
+verificar puertos
+```shell
+docker exec nginx1 netstat -tuln 
+docker exec fpm1 netstat -tuln 
+```
+
+Probar conexion entre contenedores
+
+```shell
+# ===============================================
+# ============== con NETCAT =====================
+# ===============================================
+# probar conectividad del conteendor (nginx1 al fpm1 con su puerto 9000)
+docker exec nginx1 nc -zv fpm1 9000
+
+# probar conectividad del conteendor (fpm1 al nginx1 con su puerto 80)
+docker exec fpm1 nc -zv nginx1 80
+
+# ===============================================
+# ============== con Curl =====================
+# ===============================================
+docker compose exec nginx1 curl -v telnet://fpm1:9000
+docker compose exec fpm1 curl -v telnet://nginx1:80
+```
+
 ## 5. Despliegue de Cloudflare new
 editar el fichero `stack-facturador-smart/cloudflare/.env`
 
@@ -130,6 +155,8 @@ despues eso desplegar el stack
 
 cd stack-facturador-smart/npm
 docker compose up -d
+# dar permisos
+sudo chmod -R 777 "./storage/" "./bootstrap/" "./vendor/"
 ```
 ingresar a la url: http://192.168.0.65:81
 
