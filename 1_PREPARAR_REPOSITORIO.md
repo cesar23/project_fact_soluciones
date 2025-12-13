@@ -18,6 +18,10 @@ git lfs install
 chmod +x stack-facturador-smart/smart1_compress.sh
 chmod +x stack-facturador-smart/smart1_decompress.sh
 
+
+#  eliminar vendor
+rm -rf stack-facturador-smart/smart1/vendor/*
+
 # 6. Compando para descomprimir el fichero (stack-facturador-smart/smart1.tar.gz) 
 ./stack-facturador-smart/smart1_compress.sh
 

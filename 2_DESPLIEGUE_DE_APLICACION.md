@@ -77,16 +77,17 @@ SERVICE_NUMBER=1
  # Correr en el servidro
  # =============================================================
  sudo chmod -R 777 "$PATH_INSTALL/storage/" "$PATH_INSTALL/bootstrap/" "$PATH_INSTALL/vendor/"
+ sudo chmod -R 777 "./storage/" "./bootstrap/" "./vendor/"
  
  # =============================================================
  # Correr en el Supervisor
  # =============================================================
  # echo "configurando Supervisor"
  # smart1-supervisor1-1
- docker compose exec -T smart1-supervisor1-1 service supervisor start
- docker compose exec -T smart1-supervisor1-1 supervisorctl reread
- docker compose exec -T smart1-supervisor1-1 supervisorctl update
- docker compose exec -T smart1-supervisor1-1 supervisorctl start all
+ docker compose exec -T supervisor1 service supervisor start
+ docker compose exec -T supervisor1 supervisorctl reread
+ docker compose exec -T supervisor1 supervisorctl update
+ docker compose exec -T supervisor1 supervisorctl start all
  
 
 ```
