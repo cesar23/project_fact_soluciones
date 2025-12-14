@@ -1,0 +1,81 @@
+# Flujo de trabajo de limpieza
+# Limpia imágenes Docker y caché periódicamente
+
+name: Limpieza Automática
+
+# Eventos que activan la limpieza
+on:
+  schedule:
+    # Ejecutar todos los domingos a las 4 AM UTC
+    - cron: '0 4 * * 0'
+  workflow_dispatch:  # Permite ejecución manual
+
+jobs:
+  # Job de limpieza
+  cleanup:
+    name: Limpieza de Docker y Caché
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Paso 1: Limpieza en Staging
+    - name: Limpieza en staging
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.STAGING_HOST }}
+        username: ${{ secrets.STAGING_USER }}
+        key: ${{ secrets.STAGING_SSH_KEY }}
+        script: |
+          echo "🧹 Iniciando limpieza en staging..."
+          
+          # Limpiar contenedores detenidos
+          docker container prune -f
+          
+          # Limpiar imágenes sin usar
+          docker image prune -a -f
+          
+          # Limpiar redes sin usar
+          docker network prune -f
+          
+          # Limpiar volúmenes sin usar
+          docker volume prune -f
+          
+          # Limpiar build cache
+          docker builder prune -a -f
+          
+          echo "✅ Limpieza de staging completada"
+          docker system df
+    
+    # Paso 2: Limpieza en Producción
+    - name: Limpieza en producción
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.PRODUCTION_HOST }}
+        username: ${{ secrets.PRODUCTION_USER }}
+        key: ${{ secrets.PRODUCTION_SSH_KEY }}
+        script: |
+          echo "🧹 Iniciando limpieza en producción..."
+          
+          # Limpiar contenedores detenidos
+          docker container prune -f
+          
+          # Limpiar imágenes sin usar
+          docker image prune -a -f
+          
+          # Limpiar redes sin usar
+          docker network prune -f
+          
+          # Limpiar volúmenes sin usar
+          docker volume prune -f
+          
+          # Limpiar build cache
+          docker builder prune -a -f
+          
+          echo "✅ Limpieza de producción completada"
+          docker system df
+    
+    # Paso 3: Notificar finalización
+    - name: Notificar finalización
+      run: |
+        echo "🎉 Limpieza automática completada"
+        echo "📅 Fecha: $(date)"
+        echo "🧹 Espacio liberado en ambos servidores"

@@ -1,0 +1,73 @@
+# Flujo de trabajo para gestionar etiquetas automáticas
+# Versión simplificada para principiantes
+
+name: Etiquetado Automático
+
+# Eventos que activan el workflow
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  # Job de etiquetado automático
+  label:
+    name: Asignar etiquetas automáticamente
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Usar acción de auto-label
+    - name: Asignar etiquetas por título y contenido
+      uses: banyan/auto-label@v1.1.0
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        
+        # Configuración de etiquetas
+        labels: |
+          [
+            {
+              "keywords": ["bug", "error", "fix", "crash", "broken"],
+              "labels": ["bug"]
+            },
+            {
+              "keywords": ["feature", "enhancement", "new", "add"],
+              "labels": ["enhancement"]
+            },
+            {
+              "keywords": ["documentation", "docs", "readme", "guide"],
+              "labels": ["documentation"]
+            },
+            {
+              "keywords": ["security", "vulnerability", "cve"],
+              "labels": ["security"]
+            },
+            {
+              "keywords": ["laravel", "php", "backend"],
+              "labels": ["backend"]
+            },
+            {
+              "keywords": ["frontend", "ui", "ux", "design", "css", "javascript"],
+              "labels": ["frontend"]
+            },
+            {
+              "keywords": ["docker", "container", "compose"],
+              "labels": ["docker"]
+            },
+            {
+              "keywords": ["database", "mysql", "mariadb", "migration"],
+              "labels": ["database"]
+            },
+            {
+              "keywords": ["sunat", "facturación", "invoice", "perú"],
+              "labels": ["sunat"]
+            },
+            {
+              "keywords": ["good first issue", "beginner", "easy"],
+              "labels": ["good first issue"]
+            },
+            {
+              "keywords": ["help wanted", "needs help"],
+              "labels": ["help wanted"]
+            }
+          ]

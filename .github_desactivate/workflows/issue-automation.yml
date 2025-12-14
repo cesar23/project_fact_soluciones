@@ -1,0 +1,100 @@
+# Flujo de trabajo para automatizar issues
+# Versión simplificada para principiantes
+
+name: Automatización de Issues
+
+# Eventos que activan el workflow
+on:
+  issues:
+    types: [opened, labeled, unlabeled, assigned, unassigned, milestoned, demilestoned]
+  pull_request:
+    types: [opened, closed, reopened]
+
+jobs:
+  # Job de automatización
+  automation:
+    name: Automatizar gestión de issues
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Configurar variables
+    - name: Configurar variables
+      uses: actions/github-script@v6
+      id: config
+      with:
+        script: |
+          const issue = context.payload.issue;
+          const pr = context.payload.pull_request;
+          const action = context.payload.action;
+          
+          return {
+            number: issue?.number || pr?.number,
+            isPR: !!pr,
+            action: action,
+            labels: issue?.labels || pr?.labels || []
+          };
+    
+    # Agregar a proyecto cuando se asigna
+    - name: Agregar a proyecto cuando se asigna
+      if: steps.config.outputs.action == 'assigned' || steps.config.outputs.action == 'labeled'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const labels = JSON.parse('${{ steps.config.outputs.labels }}');
+          
+          // Agregar a proyecto si tiene etiqueta de prioridad
+          if (labels.some(label => ['high', 'critical'].includes(label.name))) {
+            console.log('📋 Agregando issue/PR a proyecto prioritario');
+            // Aquí puedes agregar lógica para agregar a proyectos de GitHub
+          }
+    
+    # Cerrar issues cuando PR es mergeado
+    - name: Cerrar issues relacionados
+      if: steps.config.outputs.isPR && steps.config.outputs.action == 'closed' && github.event.pull_request.merged
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const pr = context.payload.pull_request;
+          const body = pr.body || '';
+          
+          // Buscar referencias a issues en el cuerpo del PR
+          const issueMatches = body.match(/#(\d+)/g);
+          
+          if (issueMatches) {
+            for (const match of issueMatches) {
+              const issueNumber = match.replace('#', '');
+              console.log(`🔗 Cerrando issue relacionado: #${issueNumber}`);
+              
+              try {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  state: 'closed'
+                });
+                
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  body: `✅ Cerrado por PR #${pr.number}`
+                });
+              } catch (error) {
+                console.log(`⚠️  No se pudo cerrar issue #${issueNumber}: ${error.message}`);
+              }
+            }
+          }
+    
+    # Notificar cambios importantes
+    - name: Notificar cambios importantes
+      if: contains(fromJSON('["opened", "labeled", "assigned"]'), steps.config.outputs.action)
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const labels = JSON.parse('${{ steps.config.outputs.labels }}');
+          const isCritical = labels.some(label => ['critical', 'security'].includes(label.name));
+          
+          if (isCritical) {
+            console.log('🚨 Notificando issue crítico/seguridad');
+            // Aquí puedes agregar notificaciones a Slack, email, etc.
+          }

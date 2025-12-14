@@ -1,0 +1,51 @@
+# Flujo de trabajo para revisar dependencias
+# Versión simplificada para principiantes
+
+name: Revisión de Dependencias
+
+# Eventos que activan el workflow
+on:
+  pull_request:
+    paths:
+      - '**/composer.json'
+      - '**/composer.lock'
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '**/Dockerfile*'
+      - '**/docker-compose.yml'
+
+jobs:
+  # Job de revisión de dependencias
+  dependency-review:
+    name: Revisar dependencias
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Revisar dependencias con GitHub Dependency Review
+    - name: Revisión de dependencias
+      uses: actions/dependency-review-action@v2
+      with:
+        fail-on-severity: high
+        deny-licenses: 
+        - GPL-3.0
+        - AGPL-3.0
+        
+    # Revisar vulnerabilidades conocidas
+    - name: Revisar vulnerabilidades
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { data: alerts } = await github.rest.dependabot.listAlertsForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open'
+          });
+          
+          if (alerts.length > 0) {
+            console.log('⚠️  Vulnerabilidades encontradas:');
+            alerts.forEach(alert => {
+              console.log(`- ${alert.security_advisory.summary}: ${alert.security_vulnerability.severity}`);
+            });
+          } else {
+            console.log('✅ No se encontraron vulnerabilidades');
+          }

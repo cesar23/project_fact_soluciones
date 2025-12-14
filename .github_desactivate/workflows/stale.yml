@@ -1,0 +1,58 @@
+# Flujo de trabajo para manejar issues y PRs inactivos
+# Versión simplificada para principiantes
+
+name: Marcar Issues Inactivos
+
+# Eventos que activan el workflow
+on:
+  schedule:
+    # Ejecutar todos los días a las 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:  # Permite ejecución manual
+
+jobs:
+  # Job para marcar issues inactivos
+  stale:
+    name: Marcar issues y PRs inactivos
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Usar acción de stale
+    - name: Marcar issues inactivos
+      uses: actions/stale@v5
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        
+        # Configuración para issues
+        days-before-issue-stale: 60
+        days-before-issue-close: 14
+        stale-issue-label: 'stale'
+        stale-issue-message: |
+          Este issue ha estado inactivo por 60 días. 
+          Si no hay actividad en los próximos 14 días, será cerrado automáticamente.
+          
+          Si este issue sigue siendo relevante, por favor comenta para mantenerlo activo.
+        close-issue-message: |
+          Este issue ha sido cerrado por inactividad.
+          Si aún es relevante, puedes reabrirlo o crear un nuevo issue.
+        
+        # Configuración para PRs
+        days-before-pr-stale: 30
+        days-before-pr-close: 7
+        stale-pr-label: 'stale'
+        stale-pr-message: |
+          Este pull request ha estado inactivo por 30 días.
+          Si no hay actividad en los próximos 7 días, será cerrado automáticamente.
+          
+          Si este PR sigue siendo relevante, por favor comenta para mantenerlo activo.
+        close-pr-message: |
+          Este pull request ha sido cerrado por inactividad.
+          Si aún es relevante, puedes reabrirlo o crear un nuevo PR.
+        
+        # Excepciones
+        exempt-issue-labels: 'pinned,security,bug,help wanted'
+        exempt-pr-labels: 'pinned,security,draft'
+        
+        # Opciones adicionales
+        remove-stale-when-updated: true
+        debug-only: false

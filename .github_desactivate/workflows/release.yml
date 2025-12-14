@@ -1,0 +1,79 @@
+# Flujo de trabajo para crear releases
+# Versión simplificada para principiantes
+
+name: Crear Release
+
+# Eventos que activan el workflow
+on:
+  push:
+    tags:
+      - 'v*'  # Empuja tags que comienzan con 'v'
+
+jobs:
+  # Job de creación de release
+  create-release:
+    name: Crear Release
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Paso 1: Checkout del código
+    - name: Checkout código
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    # Paso 2: Extraer información del tag
+    - name: Extraer información del release
+      id: get_version
+      run: |
+        VERSION="${GITHUB_REF#refs/tags/v}"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+        echo "📦 Versión: $VERSION"
+    
+    # Paso 3: Generar changelog
+    - name: Generar changelog
+      run: |
+        echo "# Release v${{ steps.get_version.outputs.version }}" > release-notes.md
+        echo "" >> release-notes.md
+        echo "## Fecha: $(date '+%Y-%m-%d')" >> release-notes.md
+        echo "" >> release-notes.md
+        echo "### Cambios:" >> release-notes.md
+        echo "" >> release-notes.md
+        
+        # Obtener commits desde el último tag
+        if git describe --tags --abbrev=0 HEAD~1 > /dev/null 2>&1; then
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1)
+          echo "### Commits desde $PREVIOUS_TAG:" >> release-notes.md
+          git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD >> release-notes.md
+        else
+          echo "### Todos los commits:" >> release-notes.md
+          git log --pretty=format:"- %s (%h)" >> release-notes.md
+        fi
+        
+        echo "" >> release-notes.md
+        echo "---" >> release-notes.md
+        echo "*Generado automáticamente por GitHub Actions*" >> release-notes.md
+    
+    # Paso 4: Crear release en GitHub
+    - name: Crear release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.get_version.outputs.tag }}
+        name: Release v${{ steps.get_version.outputs.version }}
+        body_path: release-notes.md
+        draft: false
+        prerelease: false
+        files: |
+          CHANGELOG.md
+          README.md
+          stack-facturador-smart/smart1.tar.gz
+    
+    # Paso 5: Notificar
+    - name: Notificar creación de release
+      run: |
+        echo "🎉 Release creado exitosamente"
+        echo "🏷️  Tag: ${{ steps.get_version.outputs.tag }}"
+        echo "📦 Versión: ${{ steps.get_version.outputs.version }}"
+        echo "📄 Notas: release-notes.md"
+        echo "🔗 URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.get_version.outputs.tag }}"
