@@ -137,6 +137,11 @@ fi
 print_section "PASO 4: CONFIGURANDO PERMISOS DE CARPETAS"
 
 print_info "Estableciendo permisos para storage, bootstrap y vendor..."
+
+mkdir -p "./stack-facturador-smart/smart1/storage" \
+         "./stack-facturador-smart/smart1/bootstrap/cache" \
+         "./stack-facturador-smart/smart1/vendor"
+
 sudo chmod -R 777 "./stack-facturador-smart/smart1/storage/" \
     "./stack-facturador-smart/smart1/bootstrap/" \
     "./stack-facturador-smart/smart1/vendor/"
