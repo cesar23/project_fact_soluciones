@@ -232,7 +232,7 @@ docker network create proxynet
 
 ### Problema 4: Build falla por falta de extensiones
 ```bash
-# Solución: Actualizar Dockerfile.fpm
+# Solución: Actualizar Dockerfile.fpm74
 # Agregar las extensiones faltantes:
 docker-php-ext-install zip soap gd pdo_mysql mysqli bcmath
 ```

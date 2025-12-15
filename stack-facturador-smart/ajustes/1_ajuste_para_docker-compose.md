@@ -59,7 +59,7 @@ Luego modifica `docker-compose.yml`:
  fpm1:
      build: 
        context: .
-       dockerfile: Dockerfile.fpm
+       dockerfile: Dockerfile.fpm74
      # image: rash07/php-fpm:7.4  # Comentar esta línea
      working_dir: /var/www/html
      # resto igual...
