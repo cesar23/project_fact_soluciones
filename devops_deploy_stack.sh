@@ -189,11 +189,14 @@ sleep 10
 # =============================================================================
 print_section "PASO 6: CONFIGURANDO LARAVEL Y DEPENDENCIAS"
 
+print_info "Configurando permisos de Git en el contenedor..."
+docker exec fpm1 bash -c "git config --global --add safe.directory /var/www/html" 2>/dev/null || true
+
 print_info "Limpiando caché de Composer..."
-if docker exec fpm1 bash -c "composer clear-cache"; then
+if docker exec fpm1 bash -c "composer clear-cache 2>/dev/null || true"; then
     print_success "Caché de Composer limpiada"
 else
-    print_warning "Error al limpiar caché de Composer"
+    print_warning "Error al limpiar caché de Composer (puede ser normal)"
 fi
 
 print_info "Instalando dependencias de Composer..."
