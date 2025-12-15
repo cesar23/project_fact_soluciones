@@ -164,7 +164,6 @@ RUN { \
     echo ''; \
     echo '# Establecer permisos correctos'; \
     echo 'chmod -R 775 /var/www/html/storage/logs 2>/dev/null || true'; \
-    echo 'chown -R www-data:www-data /var/www/html/storage/logs 2>/dev/null || true'; \
     echo ''; \
     echo '# Verificar que la configuración de supervisor es válida'; \
     echo 'if [ -f /etc/supervisor/conf.d/supervisor.conf ]; then'; \
