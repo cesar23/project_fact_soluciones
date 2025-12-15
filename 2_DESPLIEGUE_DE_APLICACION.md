@@ -134,6 +134,11 @@ docker exec fpm1 nc -zv nginx1 80
 # ===============================================
 docker compose exec nginx1 curl -v telnet://fpm1:9000
 docker compose exec fpm1 curl -v telnet://nginx1:80
+
+# =============================================
+# verificar los requerimeintos php
+# =============================================
+
 ```
 
 ## 5. Despliegue de Cloudflare new

@@ -4,8 +4,8 @@ services:
   npm:
     build:
       # imagen con plugins ( certbot-dns-duckdns, certbot-dns-cloudflare )
-      context: ./.docker/bin/
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ../.docker/nginx_proxymanager/Dockerfile
     container_name: nginx-proxy-manager
     restart: unless-stopped
     environment:

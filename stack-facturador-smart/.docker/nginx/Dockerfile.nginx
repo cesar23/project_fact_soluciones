@@ -1,0 +1,27 @@
+# 1. Usa la imagen Alpine por ser la más ligera v1
+FROM nginx:alpine
+
+# 2. Instalar herramientas de diagnóstico esenciales
+#    - 'apk update' no es necesario
+#    - 'iputils' incluye 'ping'
+#    - 'busybox-extras' proporciona herramientas como 'telnet' y 'netstat' (aunque a veces 'ss' o 'ip' es preferido en Alpine)
+#    - 'curl' para pruebas HTTP
+
+RUN apk add --no-cache \
+    iputils \
+    busybox-extras \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+RUN apk update && \
+ apk add --no-cache curl && \
+ apk add --no-cache net-tools  && \
+ rm -rf /var/cache/apk/*
+
+# 3. Copia tu configuración (debes crear este archivo: nginx.conf)
+# Asumiendo que quieres reemplazar la configuración por defecto
+# COPY nginx.conf /etc/nginx/nginx.conf
+
+# 4. Define el Healthcheck usando curl (opcional, pero buena práctica)
+HEALTHCHECK --interval=30s --timeout=5s \
+  CMD curl -f http://localhost/ || exit 1
