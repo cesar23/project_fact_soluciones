@@ -381,7 +381,7 @@ print_message "$GREEN" "└─────────────────�
 echo ""
 
 print_info "Información del sistema:"
-print_info "  📦 PHP: 8.1"
+print_info "  📦 PHP: 7.4"
 print_info "  🚀 Laravel: 8.x"
 print_info "  🐳 Docker: Activo"
 echo ""
@@ -414,7 +414,7 @@ echo ""
 
 # Registrar el despliegue
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-echo "$TIMESTAMP: Despliegue completado exitosamente (PHP 8.1 + Laravel 8 + Servicios auxiliares)" >> deploy.log
+echo "$TIMESTAMP: Despliegue completado exitosamente (PHP 7.4 + Laravel 8 + Servicios auxiliares)" >> deploy.log
 print_info "Registro de despliegue guardado en deploy.log"
 
 # Mostrar últimos logs de deploy
