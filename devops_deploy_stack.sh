@@ -20,6 +20,9 @@ NC='\033[0m' # No Color
 # Variables de configuración
 PROJECT_PATH="stack-facturador-smart/smart1"
 DOCKER_COMPOSE_FILE="${PROJECT_PATH}/docker-compose.yml"
+UTILS_COMPOSE="stack-facturador-smart/utils/docker-compose.yml"
+CLOUDFLARE_COMPOSE="stack-facturador-smart/cloudflare/docker-compose.yml"
+NPM_COMPOSE="stack-facturador-smart/npm/docker-compose.yml"
 
 # Función para imprimir mensajes con formato
 print_message() {
@@ -62,9 +65,9 @@ print_info() {
 
 clear
 print_message "$MAGENTA" "╔══════════════════════════════════════════════════════════╗"
-print_message "$MAGENTA" "║     SCRIPT DE DESPLIEGUE - STACK FACTURADOR SMART         ║"
-print_message "$MAGENTA" "║                Versión 1.1 - Perú 🇵🇪                      ║"
-print_message "$MAGENTA" "║                PHP 8.1 + Laravel 8                        ║"
+print_message "$MAGENTA" "║     SCRIPT DE DESPLIEGUE - STACK FACTURADOR SMART        ║"
+print_message "$MAGENTA" "║                Versión 1.3 - Perú 🇵🇪                     ║"
+print_message "$MAGENTA" "║                PHP 7.4 + Laravel 8                       ║"
 print_message "$MAGENTA" "╚══════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -77,17 +80,55 @@ if [ ! -f "$DOCKER_COMPOSE_FILE" ]; then
 fi
 
 # =============================================================================
-# PASO 0: PARAR SERVICIOS
+# PASO 0: PARAR TODOS LOS SERVICIOS
 # =============================================================================
-print_section "PASO 0: DETENIENDO SERVICIOS DOCKER"
+print_section "PASO 0: DETENIENDO TODOS LOS SERVICIOS DOCKER"
 
-print_info "Deteniendo todos los contenedores del stack..."
+# Detener servicio principal (smart1)
+print_info "Deteniendo servicio principal (smart1)..."
 if docker compose -f "$DOCKER_COMPOSE_FILE" down; then
-    print_success "Servicios detenidos correctamente"
+    print_success "Servicio smart1 detenido correctamente"
 else
-    print_error "Error al detener los servicios"
-    exit 1
+    print_warning "Error al detener smart1 (puede que no esté corriendo)"
 fi
+
+# Detener utilidades
+if [ -f "$UTILS_COMPOSE" ]; then
+    print_info "Deteniendo servicios de utilidades..."
+    if docker compose -f "$UTILS_COMPOSE" down; then
+        print_success "Servicios de utilidades detenidos correctamente"
+    else
+        print_warning "Error al detener utilidades (puede que no estén corriendo)"
+    fi
+else
+    print_warning "No se encuentra $UTILS_COMPOSE, omitiendo..."
+fi
+
+# Detener Cloudflare
+if [ -f "$CLOUDFLARE_COMPOSE" ]; then
+    print_info "Deteniendo túnel de Cloudflare..."
+    if docker compose -f "$CLOUDFLARE_COMPOSE" down; then
+        print_success "Túnel de Cloudflare detenido correctamente"
+    else
+        print_warning "Error al detener Cloudflare (puede que no esté corriendo)"
+    fi
+else
+    print_warning "No se encuentra $CLOUDFLARE_COMPOSE, omitiendo..."
+fi
+
+# Detener Nginx Proxy Manager
+if [ -f "$NPM_COMPOSE" ]; then
+    print_info "Deteniendo Nginx Proxy Manager..."
+    if docker compose -f "$NPM_COMPOSE" down; then
+        print_success "Nginx Proxy Manager detenido correctamente"
+    else
+        print_warning "Error al detener NPM (puede que no esté corriendo)"
+    fi
+else
+    print_warning "No se encuentra $NPM_COMPOSE, omitiendo..."
+fi
+
+print_success "Todos los servicios han sido detenidos"
 
 # =============================================================================
 # PASO 1: ACTUALIZAR CÓDIGO DESDE GIT
@@ -118,6 +159,8 @@ print_section "PASO 2: CONFIGURANDO PERMISOS DE SCRIPTS"
 print_info "Dando permisos de ejecución a scripts..."
 chmod +x stack-facturador-smart/smart1_compress.sh
 chmod +x stack-facturador-smart/smart1_decompress.sh
+chmod +x devops_deploy_stack.sh
+chmod +x devops_upload_changes.sh
 print_success "Permisos configurados correctamente"
 
 # =============================================================================
@@ -200,7 +243,7 @@ else
 fi
 
 print_info "Instalando dependencias de Composer..."
-if docker exec fpm1 bash -c "composer install --optimize-autoloader --no-dev"; then
+if docker exec fpm1 bash -c "composer install"; then
     print_success "Dependencias de Composer instaladas correctamente"
 else
     print_error "Error al instalar dependencias de Composer"
@@ -268,12 +311,61 @@ print_info "Verificando estado de Supervisor..."
 docker exec supervisor1 supervisorctl status
 
 # =============================================================================
+# PASO 8: INICIAR SERVICIOS AUXILIARES
+# =============================================================================
+print_section "PASO 8: INICIANDO SERVICIOS AUXILIARES"
+
+# Iniciar utilidades (phpMyAdmin, etc)
+if [ -f "$UTILS_COMPOSE" ]; then
+    print_info "Iniciando servicios de utilidades (phpMyAdmin)..."
+    if docker compose -f "$UTILS_COMPOSE" up -d; then
+        print_success "Servicios de utilidades iniciados correctamente"
+    else
+        print_warning "Error al iniciar utilidades"
+    fi
+else
+    print_warning "No se encuentra $UTILS_COMPOSE, omitiendo..."
+fi
+
+# Iniciar túnel de Cloudflare
+if [ -f "$CLOUDFLARE_COMPOSE" ]; then
+    print_info "Iniciando túnel de Cloudflare..."
+    if docker compose -f "$CLOUDFLARE_COMPOSE" up -d; then
+        print_success "Túnel de Cloudflare iniciado correctamente"
+    else
+        print_warning "Error al iniciar Cloudflare"
+    fi
+else
+    print_warning "No se encuentra $CLOUDFLARE_COMPOSE, omitiendo..."
+fi
+
+# Iniciar Nginx Proxy Manager
+if [ -f "$NPM_COMPOSE" ]; then
+    print_info "Iniciando Nginx Proxy Manager..."
+    if docker compose -f "$NPM_COMPOSE" up -d; then
+        print_success "Nginx Proxy Manager iniciado correctamente"
+    else
+        print_warning "Error al iniciar NPM"
+    fi
+else
+    print_warning "No se encuentra $NPM_COMPOSE, omitiendo..."
+fi
+
+print_success "Todos los servicios auxiliares han sido iniciados"
+
+# Esperar a que los servicios se estabilicen
+print_info "Esperando que los servicios auxiliares se estabilicen..."
+sleep 5
+
+# =============================================================================
 # VERIFICACIÓN FINAL
 # =============================================================================
 print_section "VERIFICACIÓN FINAL"
 
-print_info "Verificando estado de los contenedores..."
-docker compose -f "$DOCKER_COMPOSE_FILE" ps
+print_info "Verificando estado de TODOS los contenedores..."
+echo ""
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+echo ""
 
 print_info "Verificando conectividad de base de datos..."
 if docker exec fpm1 bash -c "php artisan migrate:status" > /dev/null 2>&1; then
@@ -283,9 +375,9 @@ else
 fi
 
 echo ""
-print_message "$GREEN" "┌────────────────────────────────────────────────────────────┐"
-print_message "$GREEN" "│   🎉 DESPLIEGUE COMPLETADO EXITOSAMENTE 🎉                 │"
-print_message "$GREEN" "└────────────────────────────────────────────────────────────┘"
+print_message "$GREEN" "┌──────────────────────────────────────────────────────────┐"
+print_message "$GREEN" "│   🎉 DESPLIEGUE COMPLETADO EXITOSAMENTE 🎉                │"
+print_message "$GREEN" "└──────────────────────────────────────────────────────────┘"
 echo ""
 
 print_info "Información del sistema:"
@@ -294,16 +386,26 @@ print_info "  🚀 Laravel: 8.x"
 print_info "  🐳 Docker: Activo"
 echo ""
 
-print_info "Puedes acceder a tu aplicación en:"
-print_info "  🌐 http://localhost:8080"
-print_info "  🌐 https://fact.solucionessystem.com"
+print_info "Servicios iniciados:"
+print_info "  ✅ Stack principal (smart1)"
+print_info "  ✅ Servicios auxiliares (utils)"
+print_info "  ✅ Túnel Cloudflare"
+print_info "  ✅ Nginx Proxy Manager"
+echo ""
+
+print_info "Puedes acceder a tus aplicaciones en:"
+print_info "  🌐 Aplicación principal: http://localhost:8080"
+print_info "  🌐 Sitio público: https://fact.solucionessystem.com"
+print_info "  🗄️  phpMyAdmin: http://localhost:8081"
+print_info "  🔧 Nginx Proxy Manager: http://localhost:81"
 echo ""
 
 print_info "Comandos útiles:"
-print_info "  📊 Ver logs: docker compose -f $DOCKER_COMPOSE_FILE logs -f"
-print_info "  🛑 Detener: docker compose -f $DOCKER_COMPOSE_FILE down"
-print_info "  🔄 Reiniciar: docker compose -f $DOCKER_COMPOSE_FILE restart"
-print_info "  🔍 Entrar al contenedor: docker exec -it fpm1 bash"
+print_info "  📊 Ver logs smart1: docker compose -f $DOCKER_COMPOSE_FILE logs -f"
+print_info "  📊 Ver todos los contenedores: docker ps -a"
+print_info "  🛑 Detener todo: docker stop \$(docker ps -q)"
+print_info "  🔄 Reiniciar smart1: docker compose -f $DOCKER_COMPOSE_FILE restart"
+print_info "  📝 Entrar al contenedor: docker exec -it fpm1 bash"
 print_info "  🗄️  MySQL: docker exec -it mariadb1 mysql -uroot -p"
 echo ""
 
@@ -312,7 +414,7 @@ echo ""
 
 # Registrar el despliegue
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-echo "$TIMESTAMP: Despliegue completado exitosamente (PHP 8.1 + Laravel 8)" >> deploy.log
+echo "$TIMESTAMP: Despliegue completado exitosamente (PHP 8.1 + Laravel 8 + Servicios auxiliares)" >> deploy.log
 print_info "Registro de despliegue guardado en deploy.log"
 
 # Mostrar últimos logs de deploy
