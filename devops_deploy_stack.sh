@@ -235,12 +235,6 @@ print_section "PASO 6: CONFIGURANDO LARAVEL Y DEPENDENCIAS"
 print_info "Configurando permisos de Git en el contenedor..."
 docker exec fpm1 bash -c "git config --global --add safe.directory /var/www/html" 2>/dev/null || true
 
-print_info "Limpiando caché de Composer..."
-if docker exec fpm1 bash -c "composer clear-cache 2>/dev/null || true"; then
-    print_success "Caché de Composer limpiada"
-else
-    print_warning "Error al limpiar caché de Composer (puede ser normal)"
-fi
 
 print_info "Instalando dependencias de Composer..."
 if docker exec fpm1 bash -c "composer install"; then
@@ -250,16 +244,17 @@ else
     exit 1
 fi
 
-print_info "Regenerando autoload de Composer..."
-if docker exec fpm1 bash -c "composer dump-autoload --optimize"; then
-    print_success "Autoload regenerado correctamente"
-else
-    print_warning "Error al regenerar autoload"
-fi
+#print_info "Regenerando autoload de Composer..."
+#if docker exec fpm1 bash -c "composer dump-autoload --optimize"; then
+#    print_success "Autoload regenerado correctamente"
+#else
+#    print_warning "Error al regenerar autoload"
+#fi
 
 print_info "Limpiando todas las cachés de Laravel..."
-docker exec fpm1 bash -c "php artisan config:clear"
+docker exec fpm1 bash -c "php artisan storage:link"
 docker exec fpm1 bash -c "php artisan cache:clear"
+docker exec fpm1 bash -c "php artisan config:cache"
 docker exec fpm1 bash -c "php artisan view:clear"
 docker exec fpm1 bash -c "php artisan route:clear"
 print_success "Cachés de Laravel limpiadas"
@@ -279,7 +274,7 @@ else
     print_warning "Error al cachear rutas (puede ser normal si usas closures)"
 fi
 
-print_info "Creando enlace simbólico de storage..."
+print_info "Creando enlace silicosis de storage..."
 if docker exec fpm1 bash -c "php artisan storage:link"; then
     print_success "Enlace de storage creado correctamente"
 else

@@ -4,7 +4,12 @@
 verificamos la conexiona la  db `comando basico php`
 ```shell
 docker-compose exec -T fpm1 php -r \
- 'try { $pdo = new PDO("mysql:host=mariadb1;port=3306;dbname=smart1", "root", "WPsOd4xPLL4nGRnOAHJp"); echo "Connection successful!\n"; } catch (Exception $e) { echo "Error: " . $e->getMessage() . "\n"; }'
+ 'try { 
+      $pdo = new PDO("mysql:host=mariadb1;port=3306;dbname=smart1", "root", "WPsOd4xPLL4nGRnOAHJp"); 
+      echo "Connection successful!\n"; 
+    } catch (Exception $e) { 
+      echo "Error: " . $e->getMessage() . "\n"; 
+    }'
 ```
 
 verificamos con laravel

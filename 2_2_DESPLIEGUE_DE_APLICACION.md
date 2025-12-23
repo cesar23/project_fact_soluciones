@@ -2,6 +2,7 @@
 ```shell
 cd /home/cesar
 mkdir "docker-stacks" && cd "docker-stacks"
+
 ```
 
 ## descomprimir los ficheros
@@ -70,13 +71,28 @@ PATH_INSTALL=$(echo $PWD)
 
 SERVICE_NUMBER=1
  docker compose up -d
- # ingresar al contenedor
- docker exec -it smart1-fpm1 bash
+ 
+ # ==================================================================
+ # 1. Limpiar DBS (opcional si ya  habia una  instalacion que borrar)
+ docker exec mariadb1 mysql -u root -pWPsOd4xPLL4nGRnOAHJp -e "DROP DATABASE IF EXISTS smart1;"
+ docker exec mariadb1 mysql -u root -pWPsOd4xPLL4nGRnOAHJp -e "DROP DATABASE IF EXISTS tenancy_ventas;"
+ docker exec mariadb1 mysql -u root -pWPsOd4xPLL4nGRnOAHJp -e "
+    CREATE DATABASE IF NOT EXISTS smart1
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+    "
+ # docker exec mariadb1 mysql -u root -pWPsOd4xPLL4nGRnOAHJp -e "SHOW DATABASES LIKE 'tenancy_%';"
+ 
+
+ # ==================================================================
+ # 2. ingresar al contenedor
+ docker exec -it fpm1 bash
  # Aqui ejecutar los comandos dentro del contenedor
      apt-get update
      rm composer.lock
      composer self-update
      composer install
+     # recuerda la db debe estar limpio
      php artisan migrate:refresh --seed
      php artisan key:generate
      php artisan storage:link
