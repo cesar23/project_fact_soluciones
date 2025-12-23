@@ -70,23 +70,8 @@ done <<< "$DBS"
 echo ""
 
 # Eliminar bases de datos adicionales
-if [ -n "$ADDITIONAL_DBS" ]; then
-    echo -e "${YELLOW}----------------------------------------${NC}"
-    echo -e "${YELLOW}Eliminando bases de datos adicionales...${NC}"
-    echo ""
+docker exec mariadb1 mysql -u $MYSQL_USER -p$MYSQL_PASSWORD -e "DROP DATABASE IF EXISTS $ADDITIONAL_DBS;"
 
-    for db in $ADDITIONAL_DBS; do
-        echo -n "Eliminando: $db ... "
-        if docker exec $CONTAINER_NAME bash -c "mysql -u $MYSQL_USER -p$MYSQL_PASSWORD -e 'DROP DATABASE IF EXISTS $db;'" 2>/dev/null; then
-            echo -e "${GREEN}✓ Eliminada${NC}"
-            ((DELETED++))
-        else
-            echo -e "${RED}✗ Error${NC}"
-            ((FAILED++))
-        fi
-    done
-    echo ""
-fi
 
 echo -e "${YELLOW}========================================${NC}"
 echo -e "${GREEN}Bases de datos eliminadas: $DELETED${NC}"
