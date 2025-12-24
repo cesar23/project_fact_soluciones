@@ -20,7 +20,6 @@ SCRIPT_NAME=$(basename "$PATH_SCRIPT")           # Nombre del archivo del script
 CURRENT_DIR=$(dirname "$PATH_SCRIPT")            # Ruta del directorio donde se encuentra el script.
 NAME_DIR=$(basename "$CURRENT_DIR")              # Nombre del directorio actual.
 
-
 # Colores para la salida
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -36,6 +35,10 @@ DOCKER_COMPOSE_FILE="${PROJECT_PATH}/docker-compose.yml"
 UTILS_COMPOSE="${CURRENT_DIR}/stack-facturador-smart/utils/docker-compose.yml"
 CLOUDFLARE_COMPOSE="${CURRENT_DIR}/stack-facturador-smart/cloudflare/docker-compose.yml"
 NPM_COMPOSE="${CURRENT_DIR}/stack-facturador-smart/npm/docker-compose.yml"
+
+# Credenciales de base de datos
+DB_ROOT_PASSWORD="WPsOd4xPLL4nGRnOAHJp"
+DB_NAME="smart1"
 
 # Función para imprimir mensajes con formato
 print_message() {
@@ -79,7 +82,7 @@ print_info() {
 clear
 print_message "$MAGENTA" "╔═══════════════════════════════════════════════════════════╗"
 print_message "$MAGENTA" "║     SCRIPT DE DESPLIEGUE - STACK FACTURADOR SMART        ║"
-print_message "$MAGENTA" "║                Versión 1.3 - Perú 🇵🇪                     ║"
+print_message "$MAGENTA" "║                Versión 1.4 - Perú 🇵🇪                     ║"
 print_message "$MAGENTA" "║                PHP 7.4 + Laravel 8                       ║"
 print_message "$MAGENTA" "╚═══════════════════════════════════════════════════════════╝"
 echo ""
@@ -200,13 +203,13 @@ print_section "PASO 4: CONFIGURANDO PERMISOS DE CARPETAS"
 
 print_info "Estableciendo permisos para storage, bootstrap y vendor..."
 
-mkdir -p "./${PROJECT_PATH}/storage" \
-         "./${PROJECT_PATH}/bootstrap/cache" \
-         "./${PROJECT_PATH}/vendor"
+mkdir -p "${PROJECT_PATH}/storage" \
+         "${PROJECT_PATH}/bootstrap/cache" \
+         "${PROJECT_PATH}/vendor"
 
-sudo chmod -R 777 "./${PROJECT_PATH}/storage/" \
-    "./${PROJECT_PATH}/bootstrap/" \
-    "./${PROJECT_PATH}/vendor/"
+sudo chmod -R 777 "${PROJECT_PATH}/storage/" \
+    "${PROJECT_PATH}/bootstrap/" \
+    "${PROJECT_PATH}/vendor/"
 
 if [ $? -eq 0 ]; then
     print_success "Permisos de carpetas configurados correctamente"
@@ -248,7 +251,6 @@ print_section "PASO 6: CONFIGURANDO LARAVEL Y DEPENDENCIAS"
 print_info "Configurando permisos de Git en el contenedor..."
 docker exec fpm1 bash -c "git config --global --add safe.directory /var/www/html" 2>/dev/null || true
 
-
 print_info "Instalando dependencias de Composer..."
 if docker exec fpm1 bash -c "composer install"; then
     print_success "Dependencias de Composer instaladas correctamente"
@@ -257,17 +259,10 @@ else
     exit 1
 fi
 
-#print_info "Regenerando autoload de Composer..."
-#if docker exec fpm1 bash -c "composer dump-autoload --optimize"; then
-#    print_success "Autoload regenerado correctamente"
-#else
-#    print_warning "Error al regenerar autoload"
-#fi
-
 print_info "Limpiando todas las cachés de Laravel..."
-docker exec fpm1 bash -c "php artisan storage:link"
+docker exec fpm1 bash -c "php artisan storage:link" 2>/dev/null || true
 docker exec fpm1 bash -c "php artisan cache:clear"
-docker exec fpm1 bash -c "php artisan config:cache"
+docker exec fpm1 bash -c "php artisan config:clear"
 docker exec fpm1 bash -c "php artisan view:clear"
 docker exec fpm1 bash -c "php artisan route:clear"
 print_success "Cachés de Laravel limpiadas"
@@ -287,7 +282,7 @@ else
     print_warning "Error al cachear rutas (puede ser normal si usas closures)"
 fi
 
-print_info "Creando enlace silicosis de storage..."
+print_info "Creando enlace simbólico de storage..."
 if docker exec fpm1 bash -c "php artisan storage:link"; then
     print_success "Enlace de storage creado correctamente"
 else
@@ -414,7 +409,7 @@ print_info "  📊 Ver todos los contenedores: docker ps -a"
 print_info "  🛑 Detener todo: docker stop \$(docker ps -q)"
 print_info "  🔄 Reiniciar smart1: docker compose -f $DOCKER_COMPOSE_FILE restart"
 print_info "  🔍 Entrar al contenedor: docker exec -it fpm1 bash"
-print_info "  🗄️  MySQL: docker exec -it mariadb1 mysql -uroot -p"
+print_info "  🗄️  MySQL: docker exec -it mariadb1 mysql -uroot -p$DB_ROOT_PASSWORD"
 echo ""
 
 # =============================================================================
@@ -428,51 +423,107 @@ echo ""
 print_message "$RED" "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
 print_message "$RED" "┃  🔴 SI ESTA ES LA PRIMERA VEZ QUE INSTALAS EL SISTEMA 🔴      ┃"
 print_message "$RED" "┃                                                               ┃"
-print_message "$RED" "┃  DEBES EJECUTAR LOS SIGUIENTES COMANDOS MANUALMENTE :         ┃"
-print_message "$RED" "┃  LUEGO REINICIAR                                              ┃"
+print_message "$RED" "┃  DEBES EJECUTAR LOS SIGUIENTES COMANDOS MANUALMENTE          ┃"
+print_message "$RED" "┃  Y LUEGO REINICIAR EL STACK                                   ┃"
 print_message "$RED" "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
 echo ""
-print_message "$CYAN" "===================================================="
-print_message "$CYAN" "0️⃣  PREPARAR DB:"
-print_message "$CYAN" " - borrar la base de datos smart1"
-print_message "$GREEN" "   docker exec mariadb1 mysql -u root -pWPsOd4xPLL4nGRnOAHJp -e \"DROP DATABASE IF EXISTS smart1;\""
+
+# PASO 0: BASE DE DATOS
+print_message "$CYAN" "════════════════════════════════════════════════════════════════"
+print_message "$CYAN" "  PASO 0: PREPARAR BASE DE DATOS"
+print_message "$CYAN" "════════════════════════════════════════════════════════════════"
 echo ""
-print_message "$CYAN" " - crear la base de datos smart1"
-print_message "$GREEN" "   docker exec mariadb1 mysql -u root -pWPsOd4xPLL4nGRnOAHJp -e \"CREATE DATABASE IF NOT EXISTS smart1;\""
+
+print_message "$YELLOW" "📌 Eliminar base de datos existente (si existe):"
+print_message "$GREEN" "docker exec mariadb1 mysql -u root -p$DB_ROOT_PASSWORD -e \"DROP DATABASE IF EXISTS $DB_NAME;\""
 echo ""
-print_message "$CYAN" " - verificar si hay db tenancy si hay eliminarlos"
-print_message "$GREEN" "   docker exec mariadb1 mysql -u root -pWPsOd4xPLL4nGRnOAHJp -e \"SHOW DATABASES LIKE 'tenancy_%';\""
+
+print_message "$YELLOW" "📌 Crear base de datos nueva:"
+print_message "$GREEN" "docker exec mariadb1 mysql -u root -p$DB_ROOT_PASSWORD -e \"CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\""
 echo ""
+
+print_message "$YELLOW" "📌 Verificar bases de datos tenancy (eliminar si existen):"
+print_message "$GREEN" "docker exec mariadb1 mysql -u root -p$DB_ROOT_PASSWORD -e \"SHOW DATABASES LIKE 'tenancy_%';\""
+print_message "$BLUE" "   └─ Si aparecen bases tenancy_*, elimínalas manualmente"
 echo ""
-print_message "$CYAN" "===================================================="
-print_message "$CYAN" "1️⃣  Accede al contenedor PHP:"
-print_message "$GREEN" "   docker exec -it fpm1 bash"
+
+# PASO 1: CONTENEDOR PHP
+print_message "$CYAN" "════════════════════════════════════════════════════════════════"
+print_message "$CYAN" "  PASO 1: CONFIGURAR APLICACIÓN PHP"
+print_message "$CYAN" "════════════════════════════════════════════════════════════════"
 echo ""
-print_message "$CYAN" "2️⃣  Ejecuta los siguientes comandos EN ORDEN:"
+
+print_message "$YELLOW" "📌 Actualizar repositorios del sistema:"
+print_message "$GREEN" "docker exec fpm1 apt-get update"
+print_message "$BLUE" "   └─ Actualiza la lista de paquetes disponibles"
 echo ""
-print_message "$YELLOW" "   📌 composer self-update"
-print_message "$BLUE" "      └─ Actualiza Composer a la última versión"
+
+print_message "$YELLOW" "📌 Actualizar Composer:"
+print_message "$GREEN" "docker exec fpm1 composer self-update"
+print_message "$BLUE" "   └─ Actualiza Composer a la última versión"
 echo ""
-print_message "$YELLOW" "   📌 composer install"
-print_message "$BLUE" "      └─ Instala todas las dependencias del proyecto"
+
+print_message "$YELLOW" "📌 Instalar dependencias:"
+print_message "$GREEN" "docker exec fpm1 composer install"
+print_message "$BLUE" "   └─ Instala todas las dependencias del proyecto"
 echo ""
-print_message "$YELLOW" "   📌 php artisan migrate:refresh --seed"
-print_message "$BLUE" "      └─ Crea las tablas de la BD y carga datos iniciales"
-print_message "$RED" "      ⚠️  ADVERTENCIA: Esto BORRARÁ todos los datos existentes"
+
+print_message "$YELLOW" "📌 Crear estructura de base de datos:"
+print_message "$GREEN" "docker exec fpm1 php artisan migrate:refresh --seed"
+print_message "$BLUE" "   └─ Crea tablas y carga datos iniciales"
+print_message "$RED" "   ⚠️  ADVERTENCIA: Esto BORRARÁ todos los datos existentes"
 echo ""
-print_message "$YELLOW" "   📌 php artisan key:generate"
-print_message "$BLUE" "      └─ Genera la clave de encriptación de la aplicación"
+
+print_message "$YELLOW" "📌 Generar clave de aplicación:"
+print_message "$GREEN" "docker exec fpm1 php artisan key:generate"
+print_message "$BLUE" "   └─ Genera la clave de encriptación de Laravel"
 echo ""
-print_message "$YELLOW" "   📌 php artisan storage:link"
-print_message "$BLUE" "      └─ Crea enlace simbólico para archivos públicos"
+
+print_message "$YELLOW" "📌 Crear enlace de storage:"
+print_message "$GREEN" "docker exec fpm1 php artisan storage:link"
+print_message "$BLUE" "   └─ Crea enlace simbólico para archivos públicos"
 echo ""
-print_message "$CYAN" "3️⃣  Sal del contenedor:"
-print_message "$GREEN" "   exit"
+
+# PASO 2: LIMPIAR CACHÉS
+print_message "$CYAN" "════════════════════════════════════════════════════════════════"
+print_message "$CYAN" "  PASO 2: LIMPIAR Y OPTIMIZAR CACHÉS"
+print_message "$CYAN" "════════════════════════════════════════════════════════════════"
 echo ""
-print_message "$MAGENTA" "═══════════════════════════════════════════════════════════════════"
-print_message "$MAGENTA" "  💡 SCRIPT RÁPIDO PARA COPIAR Y PEGAR:"
-print_message "$MAGENTA" "═══════════════════════════════════════════════════════════════════"
+
+print_message "$YELLOW" "📌 Limpiar cachés:"
+print_message "$GREEN" "docker exec fpm1 php artisan config:clear"
+print_message "$GREEN" "docker exec fpm1 php artisan cache:clear"
+print_message "$GREEN" "docker exec fpm1 php artisan route:clear"
+print_message "$GREEN" "docker exec fpm1 php artisan view:clear"
+print_message "$GREEN" "docker exec fpm1 php artisan optimize:clear"
 echo ""
+
+print_message "$YELLOW" "📌 Cachear configuración:"
+print_message "$GREEN" "docker exec fpm1 php artisan config:cache"
+print_message "$BLUE" "   └─ Optimiza la carga de configuración"
+echo ""
+
+# PASO 3: PERMISOS
+print_message "$CYAN" "════════════════════════════════════════════════════════════════"
+print_message "$CYAN" "  PASO 3: CONFIGURAR PERMISOS DE CARPETAS"
+print_message "$CYAN" "════════════════════════════════════════════════════════════════"
+echo ""
+
+print_message "$YELLOW" "📌 Establecer permisos de escritura:"
+print_message "$GREEN" "sudo chmod -R 777 \"${PROJECT_PATH}/storage/\" \"${PROJECT_PATH}/bootstrap/\" \"${PROJECT_PATH}/vendor/\""
+print_message "$BLUE" "   └─ Otorga permisos completos a carpetas críticas"
+echo ""
+
+# SCRIPT RÁPIDO TODO EN UNO
+print_message "$MAGENTA" "════════════════════════════════════════════════════════════════"
+print_message "$MAGENTA" "  💡 SCRIPT COMPLETO - COPIAR Y EJECUTAR TODO:"
+print_message "$MAGENTA" "════════════════════════════════════════════════════════════════"
+echo ""
+print_message "$GREEN" "# Preparar base de datos"
+print_message "$GREEN" "docker exec mariadb1 mysql -u root -p$DB_ROOT_PASSWORD -e \"DROP DATABASE IF EXISTS $DB_NAME;\""
+print_message "$GREEN" "docker exec mariadb1 mysql -u root -p$DB_ROOT_PASSWORD -e \"CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\""
+echo ""
+print_message "$GREEN" "# Configurar aplicación"
 print_message "$GREEN" "docker exec fpm1 apt-get update"
 print_message "$GREEN" "docker exec fpm1 composer self-update"
 print_message "$GREEN" "docker exec fpm1 composer install"
@@ -480,16 +531,24 @@ print_message "$GREEN" "docker exec fpm1 php artisan migrate:refresh --seed"
 print_message "$GREEN" "docker exec fpm1 php artisan key:generate"
 print_message "$GREEN" "docker exec fpm1 php artisan storage:link"
 echo ""
-print_message "$MAGENTA" "═══════════════════════════════════════════════════════════════════"
+print_message "$GREEN" "# Limpiar y optimizar"
+print_message "$GREEN" "docker exec fpm1 php artisan config:clear"
+print_message "$GREEN" "docker exec fpm1 php artisan cache:clear"
+print_message "$GREEN" "docker exec fpm1 php artisan route:clear"
+print_message "$GREEN" "docker exec fpm1 php artisan view:clear"
+print_message "$GREEN" "docker exec fpm1 php artisan optimize:clear"
+print_message "$GREEN" "docker exec fpm1 php artisan config:cache"
 echo ""
-print_message "$CYAN" "===================================================="
-print_message "$CYAN" "5️⃣  Setear permisos de carpetas:"
+print_message "$GREEN" "# Permisos"
+print_message "$GREEN" "sudo chmod -R 777 \"${PROJECT_PATH}/storage/\" \"${PROJECT_PATH}/bootstrap/\" \"${PROJECT_PATH}/vendor/\""
 echo ""
-print_message "$GREEN" "   PATH_INSTALL=\"${PROJECT_PATH}\""
-print_message "$GREEN" "   sudo chmod -R 777 \"${PATH_INSTALL}/storage/\" \"${PATH_INSTALL}/bootstrap/\" \"${PATH_INSTALL}/vendor/\""
+print_message "$MAGENTA" "════════════════════════════════════════════════════════════════"
 echo ""
-print_message "$RED" "⚠️  NOTA: Solo ejecuta estos comandos en la PRIMERA instalación"
-print_message "$RED" "⚠️  En despliegues posteriores, estos comandos NO son necesarios"
+
+print_message "$RED" "⚠️  IMPORTANTE:"
+print_message "$RED" "   • Estos comandos SOLO se ejecutan en la PRIMERA instalación"
+print_message "$RED" "   • En despliegues posteriores NO son necesarios"
+print_message "$RED" "   • Después de ejecutar, reinicia el stack con: ./devops_deploy_stack.sh"
 echo ""
 
 print_success "¡El stack facturador smart está listo para usar! 🇵🇪"
@@ -497,7 +556,7 @@ echo ""
 
 # Registrar el despliegue
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-echo "$TIMESTAMP: Despliegue completado exitosamente (PHP 7.4 + Laravel 8 + Servicios auxiliares)" >> deploy.log
+echo "$TIMESTAMP - $MY_INFO: Despliegue completado exitosamente (PHP 7.4 + Laravel 8)" >> deploy.log
 print_info "Registro de despliegue guardado en deploy.log"
 
 # Mostrar últimos logs de deploy
