@@ -8,6 +8,19 @@
 # construcción de contenedores y configuración de Laravel
 # =============================================================================
 
+DATE_HOUR=$(date "+%Y-%m-%d_%H:%M:%S")
+# Fecha y hora actual en Perú (UTC -5)
+DATE_HOUR_PE=$(date -u -d "-5 hours" "+%Y-%m-%d_%H:%M:%S" 2>/dev/null || TZ="America/Lima" date "+%Y-%m-%d_%H:%M:%S" 2>/dev/null || echo "$DATE_HOUR")
+CURRENT_USER=$(id -un)             # Nombre del usuario actual.
+CURRENT_USER_HOME="${HOME:-$USERPROFILE}"  # Ruta del perfil del usuario actual.
+CURRENT_PC_NAME=$(hostname)        # Nombre del equipo actual.
+MY_INFO="${CURRENT_USER}@${CURRENT_PC_NAME}"  # Información combinada del usuario y del equipo.
+PATH_SCRIPT=$(readlink -f "${BASH_SOURCE:-$0}")  # Ruta completa del script actual.
+SCRIPT_NAME=$(basename "$PATH_SCRIPT")           # Nombre del archivo del script.
+CURRENT_DIR=$(dirname "$PATH_SCRIPT")            # Ruta del directorio donde se encuentra el script.
+NAME_DIR=$(basename "$CURRENT_DIR")              # Nombre del directorio actual.
+
+
 # Colores para la salida
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -18,11 +31,11 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Variables de configuración
-PROJECT_PATH="stack-facturador-smart/smart1"
+PROJECT_PATH="${CURRENT_DIR}/stack-facturador-smart/smart1"
 DOCKER_COMPOSE_FILE="${PROJECT_PATH}/docker-compose.yml"
-UTILS_COMPOSE="stack-facturador-smart/utils/docker-compose.yml"
-CLOUDFLARE_COMPOSE="stack-facturador-smart/cloudflare/docker-compose.yml"
-NPM_COMPOSE="stack-facturador-smart/npm/docker-compose.yml"
+UTILS_COMPOSE="${CURRENT_DIR}/stack-facturador-smart/utils/docker-compose.yml"
+CLOUDFLARE_COMPOSE="${CURRENT_DIR}/stack-facturador-smart/cloudflare/docker-compose.yml"
+NPM_COMPOSE="${CURRENT_DIR}/stack-facturador-smart/npm/docker-compose.yml"
 
 # Función para imprimir mensajes con formato
 print_message() {
@@ -419,6 +432,19 @@ print_message "$RED" "┃  DEBES EJECUTAR LOS SIGUIENTES COMANDOS MANUALMENTE : 
 print_message "$RED" "┃  LUEGO REINICIAR                                              ┃"
 print_message "$RED" "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
 echo ""
+print_message "$CYAN" "===================================================="
+print_message "$CYAN" "0️⃣  PREPARAR DB:"
+print_message "$CYAN" " - borrar la base de datos smart1"
+print_message "$GREEN" "   docker exec mariadb1 mysql -u root -pWPsOd4xPLL4nGRnOAHJp -e \"DROP DATABASE IF EXISTS smart1;\""
+echo ""
+print_message "$CYAN" " - crear la base de datos smart1"
+print_message "$GREEN" "   docker exec mariadb1 mysql -u root -pWPsOd4xPLL4nGRnOAHJp -e \"CREATE DATABASE IF NOT EXISTS smart1;\""
+echo ""
+print_message "$CYAN" " - verificar si hay db tenancy si hay eliminarlos"
+print_message "$GREEN" "   docker exec mariadb1 mysql -u root -pWPsOd4xPLL4nGRnOAHJp -e \"SHOW DATABASES LIKE 'tenancy_%';\""
+echo ""
+echo ""
+print_message "$CYAN" "===================================================="
 print_message "$CYAN" "1️⃣  Accede al contenedor PHP:"
 print_message "$GREEN" "   docker exec -it fpm1 bash"
 echo ""
@@ -455,6 +481,12 @@ print_message "$GREEN" "docker exec fpm1 php artisan key:generate"
 print_message "$GREEN" "docker exec fpm1 php artisan storage:link"
 echo ""
 print_message "$MAGENTA" "═══════════════════════════════════════════════════════════════════"
+echo ""
+print_message "$CYAN" "===================================================="
+print_message "$CYAN" "5️⃣  Setear permisos de carpetas:"
+echo ""
+print_message "$GREEN" "   PATH_INSTALL=\"${PROJECT_PATH}\""
+print_message "$GREEN" "   sudo chmod -R 777 \"$PATH_INSTALL/storage/\" \"$PATH_INSTALL/bootstrap/\" \"$PATH_INSTALL/vendor/\""
 echo ""
 print_message "$RED" "⚠️  NOTA: Solo ejecuta estos comandos en la PRIMERA instalación"
 print_message "$RED" "⚠️  En despliegues posteriores, estos comandos NO son necesarios"
