@@ -1,0 +1,39 @@
+2025-10-16 00:53:56 - [INFO] ================================================
+2025-10-16 00:53:56 - [INFO] Inicio de la instalacion
+2025-10-16 00:53:56 - [INFO] Ruta de instalacion: /home/cesar/stack-facturador-smart
+2025-10-16 00:53:56 - [INFO] Nombre de carpeta: smart1
+2025-10-16 00:53:56 - [INFO] Usuario de MySQL: smart1
+2025-10-16 00:53:56 - [INFO] Contraseña de MySQL: 3lIE8eGCzb4dynAKgfNN
+2025-10-16 00:53:56 - [INFO] Base de datos de MySQL: smart1
+2025-10-16 00:53:56 - [INFO] Contraseña de root de MySQL: yLtQVDnqiDYUVfqmTjss
+2025-10-16 00:53:56 - [INFO] Puerto de MySQL: 3306
+2025-10-16 00:53:56 - [INFO] Dominio: fact.rog.pe
+2025-10-16 00:53:56 - [INFO] Numero de servicio: 1
+2025-10-16 00:53:56 - [INFO] ================================================
+
+
+2025-10-16 00:57:08 - [INFO] ================================================
+2025-10-16 00:57:08 - [INFO] Clonando el repositorio
+2025-10-16 00:57:08 - [INFO] Ruta del repositorio: https://gitlab.com/perucaos/smart.git
+2025-10-16 00:57:08 - [INFO] Ruta de instalacion del proyecto: /home/cesar/stack-facturador-smart/smart1
+2025-10-16 00:57:08 - [INFO] ================================================
+
+
+
+
+Application key set successfully.
+The [/var/www/html/public/storage] link has been connected to [/var/www/html/storage/app/public].
+The links have been created.
+configurando permisos
+configurando Supervisor
+Starting supervisor: supervisord.
+No config updates to processes
+Ruta del proyecto dentro del servidor: /home/cesar/stack-facturador-smart/smart1
+----------------------------------------------
+URL: fact.rog.pe
+Correo para administrador: admin@fact.rog.pe
+Contraseña para administrador: Iooiur8oLi
+----------------------------------------------
+Acceso remoto a Mysql
+Contraseña para root: WPsOd4xPLL4nGRnOAHJp
+Puerto: 3306
