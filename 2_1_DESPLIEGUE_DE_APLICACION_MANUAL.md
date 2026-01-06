@@ -111,11 +111,7 @@ docker exec mariadb1 mysql -u root -p$DB_ROOT_PASSWORD -e "CREATE DATABASE IF NO
 
 docker exec mariadb1 mysql -u root -p$DB_ROOT_PASSWORD -e "DROP DATABASE IF EXISTS tenancy_ventas;"
 # verificar si hay tablas tenancy
-docker exec mariadb1 mysql -u root -p$DB_ROOT_PASSWORD -e "
-SELECT SCHEMA_NAME 
-FROM information_schema.SCHEMATA 
-WHERE SCHEMA_NAME LIKE 'tenancy_%';
-"
+docker exec mariadb1 mysql -u root -p$DB_ROOT_PASSWORD -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME LIKE 'tenancy_%'; "
 # docker exec mariadb1 mysql -u root -p$DB_ROOT_PASSWORD -e "DROP DATABASE IF EXISTS $DB_NAME;"
 # docker exec mariadb1 mysql -u root -p$DB_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
