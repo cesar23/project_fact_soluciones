@@ -1,0 +1,8 @@
+*
+!.gitignore
+!skins/
+!skins/light.css
+!skins/default.css
+!uploads/
+!uploads/favicons/
+!uploads/favicons/update.png

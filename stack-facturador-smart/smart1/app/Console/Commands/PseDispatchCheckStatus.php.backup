@@ -1,0 +1,135 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use App\Traits\CommandTrait;
+use App\Models\Tenant\{
+    Company,
+    Configuration,
+    Dispatch,
+    User,
+};
+use App\Services\PseServiceDispatchTask;
+use App\Services\PseServiceTask;
+use Hyn\Tenancy\Models\Website;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Modules\ApiPeruDev\Http\Controllers\ServiceDispatchController;
+
+class PseDispatchCheckStatus extends Command
+{
+    use CommandTrait;
+
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'pse:dispatchcheck';
+    protected $company = null;
+    protected $token = null;
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Check status of PSE documents';
+    /**
+     * Create a new command instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    function get_documents_multi_companies($state_type_id, $company_name)
+    {
+        try {
+            $documents = DB::connection('tenant')->table('dispatches')
+                ->where('date_of_issue', '>=', '2025-09-01')
+                ->where('state_type_id', $state_type_id)
+                ->where('company', $company_name)
+                ->get();
+            return $documents;
+        } catch (\Exception $e) {
+        }
+    }
+    function get_documents($state_type_id)
+    {
+        try {
+            $documents = DB::connection('tenant')->table('dispatches')
+                ->where('date_of_issue', '>=', '2025-09-01')
+                ->where('state_type_id', $state_type_id)
+                ->get();
+
+            return $documents;
+        } catch (\Exception $e) {
+        }
+    }
+    public function handle()
+
+    {
+        $configuration = Configuration::first();
+        $multi_companies = $configuration->multi_companies;
+        if ($multi_companies) {
+            $companies = Company::all();
+            foreach ($companies as $company) {
+                $this->company = $company;
+                if ($company->pse && $company->pse_url && $company->pse_token && $company->number && $company->type_send_pse == 2) {
+                    foreach (['03'] as $state_type_id) {
+                        $documents = $this->get_documents_multi_companies($state_type_id, $company->name);
+                        if ($documents->count() > 0) {
+                            new PseServiceDispatchTask($documents, $state_type_id);
+                        }
+                    }
+                }
+            }
+        } else {
+            $company = Company::firstOrFail();
+            $this->company = $company;
+            if ($company->pse && $company->pse_url && $company->pse_token && $company->number && $company->type_send_pse == 2) {
+                foreach (['03'] as $state_type_id) {
+                    $documents = $this->get_documents($state_type_id);
+                    if ($documents->count() > 0) {
+                        new PseServiceDispatchTask($documents, $state_type_id);
+                    }
+                }
+            } else {
+                
+                foreach (['01'] as $state_type_id) {
+                    $documents = $this->get_documents($state_type_id);
+                    if ($documents->count() > 0) {
+                        foreach ($documents as $document) {
+                            try{
+                                (new ServiceDispatchController)->send($document->external_id);
+                            }catch(\Exception $e){
+                                $this->info("{$document->date_of_issue} - {$e->getMessage()}");
+                            }
+                        }
+                    }
+                }
+
+                foreach (['03'] as $state_type_id) {
+                    $documents = $this->get_documents($state_type_id);
+                    if ($documents->count() > 0) {
+                        try{
+                            foreach ($documents as $document) {
+                                (new ServiceDispatchController)->statusTicket($document->external_id);
+                            }
+                        }catch(\Exception $e){
+                            $this->info("{$document->date_of_issue} - {$e->getMessage()}");
+                        }
+                    }
+                }
+
+            }
+        }
+
+
+
+        $this->info('The command is finishedq');
+    }
+}

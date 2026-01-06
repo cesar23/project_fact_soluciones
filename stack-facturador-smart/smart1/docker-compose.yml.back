@@ -1,0 +1,112 @@
+
+services:
+  nginx1:
+    image: rash07/nginx
+    container_name: nginx1
+    working_dir: /var/www/html
+    # 🧪 Agregado por cesar
+    # 📍 Ubicación del stack: stack-facturador-smart/smart1
+    # 📌 Documentación: https://github.com/tu-repositorio/stack-facturador-smart
+    ports:
+      - "8080:80"
+    environment:
+      VIRTUAL_HOST: fact.solucionessystem.com,*.fact.solucionessystem.com
+    volumes:
+      - ./:/var/www/html
+      #- /home/cesar/stack-facturador-smart/proxy/fpms/smart1:/etc/nginx/sites-available
+      - ../config/ngnix/sites-available:/etc/nginx/sites-available
+    restart: always
+    labels:
+      - 'com.docker.compose.stack=principal'
+      - 'com.docker.compose.project=facturador'
+      - 'com.docker.compose.network=proxynet'
+      - 'com.docker.compose.service=ngnix'
+
+  fpm1:
+    container_name: fpm1
+    # lo ajuste por el problema de las librerias (2025-10-22)
+    build:
+      context: .
+      dockerfile: Dockerfile.fpm
+      #dockerfile: Dockerfile.fpm8
+    # image: rash07/php-fpm:7.4
+    working_dir: /var/www/html
+    volumes:
+      - ./ssh:/root/.ssh
+      - ./ssh:/var/www/.ssh
+      - ./:/var/www/html
+    restart: always
+    labels:
+        - 'com.docker.compose.stack=principal'
+        - 'com.docker.compose.project=facturador'
+        - 'com.docker.compose.network=proxynet'
+        - 'com.docker.compose.service=fpmphp'
+
+  mariadb1:
+    container_name: mariadb1
+    image: mariadb:10.5.6
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_PORT_HOST: ${MYSQL_PORT_HOST}
+    volumes:
+      - mysqldata1:/var/lib/mysql
+    ports:
+      - "${MYSQL_PORT_HOST}:3306"
+    restart: always
+    labels:
+        - 'com.docker.compose.stack=principal'
+        - 'com.docker.compose.project=facturador'
+        - 'com.docker.compose.network=proxynet'
+        - 'com.docker.compose.service=mariadb'
+
+  redis1:
+    container_name: redis1
+    image: redis:alpine
+    volumes:
+      - redisdata1:/data
+    restart: always
+    labels:
+        - 'com.docker.compose.stack=principal'
+        - 'com.docker.compose.project=facturador'
+        - 'com.docker.compose.network=proxynet'
+
+  scheduling1:
+    container_name: scheduling1
+    image: rash07/scheduling
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    restart: always
+    labels:
+        - 'com.docker.compose.stack=principal'
+        - 'com.docker.compose.project=facturador'
+        - 'com.docker.compose.network=proxynet'
+        - 'com.docker.compose.service=scheduling'
+
+  supervisor1:
+    container_name: supervisor1
+    image: rash07/php7.4-supervisor
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - ./supervisor.conf:/etc/supervisor/conf.d/supervisor.conf
+    restart: always
+    labels:
+        - 'com.docker.compose.stack=principal'
+        - 'com.docker.compose.project=facturador'
+        - 'com.docker.compose.network=proxynet'
+        - 'com.docker.compose.service=supervisor'
+
+networks:
+  default:
+    name: proxynet
+    external: true
+
+volumes:
+  redisdata1:
+    driver: local
+  mysqldata1:
+    driver: local

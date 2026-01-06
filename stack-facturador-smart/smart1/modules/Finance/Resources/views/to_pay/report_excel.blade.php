@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Type" content="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>Reporte</title>
+    </head>
+    <body>
+        <div>
+            <h3 align="center" class="title"><strong>Reporte Cuentas Por Pagar</strong></h3>
+        </div>
+        <br>
+        <div style="margin-top:20px; margin-bottom:15px;">
+            <table>
+                <tr>
+                    <td>
+                        <p><b>Empresa: </b></p>
+                    </td>
+                    <td align="center">
+                        <p><strong>{{$company->name}}</strong></p>
+                    </td>
+                    <td>
+                        <p><strong>Fecha: </strong></p>
+                    </td>
+                    <td align="center">
+                        <p><strong>{{date('Y-m-d')}}</strong></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p><strong>Ruc: </strong></p>
+                    </td>
+                    <td align="center">{{$company->number}}</td>
+
+                </tr>
+            </table>
+        </div>
+        <br>
+        @if(!empty($records))
+            <div class="">
+                <div class=" ">
+                    <table class="">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th class="text-center">Fecha Emisión</th>
+                                <th>Número</th>
+                                <th>Proveedor</th>
+                                <th>RUC Proveedor</th>
+                                <th>Tipo</th>
+                                <th>Comprador</th>
+                                <th>Moneda</th>
+                                <th>Por Pagar</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($records as $key => $value)
+                                @php
+                                $user = \App\Models\Tenant\User::find($value['user_id']);
+                                $user_name = null;
+                                if(!empty($user)){
+                                    $user_name = $user->getName();
+                                }
+                                $total_to_pay = is_string($value['total_to_pay']) ? (float)str_replace(',', '', $value['total_to_pay']) : (float)$value['total_to_pay'];
+                                $supplier_number = '';
+                                if(isset($value['supplier_id'])){
+                                    $supplier = \App\Models\Tenant\Person::find($value['supplier_id']);
+                                    $supplier_number = $supplier ? $supplier->number : '';
+                                }
+                                @endphp
+                                @if($total_to_pay > 0)
+                                    <tr>
+                                        <td class="celda">{{$loop->iteration}}</td>
+                                        <td class="celda">{{$value['date_of_issue']}}</td>
+                                        <td class="celda">{{$value['number_full']}}</td>
+                                        <td class="celda">{{$value['supplier_name']}}</td>
+                                        <td class="celda">{{$supplier_number}}</td>
+                                        <td class="celda">{{strtoupper($value['type'])}}</td>
+                                        <td class="celda">{{$user_name}}</td>
+                                        <td class="celda">{{$value['currency_type_id']}}</td>
+                                        <td class="celda">{{number_format($total_to_pay, 2)}}</td>
+                                        <td class="celda">{{$value['total']}}</td>
+                                    </tr>
+                                @endif
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @else
+            <div>
+                <p>No se encontraron registros.</p>
+            </div>
+        @endif
+    </body>
+</html>

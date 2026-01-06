@@ -1,0 +1,151 @@
+# stack-facturador-smart/smart1/docker-compose.yml  v2.2
+services:
+  nginx1:
+    build:
+      context: .
+      dockerfile: ../.docker/nginx/Dockerfile.nginx
+    #image: rash07/nginx
+    container_name: nginx1
+    working_dir: /var/www/html
+    # 🧪 Agregado por cesar
+    # 📍 Ubicación del stack: stack-facturador-smart/smart1
+    # 📌 Documentación: https://github.com/tu-repositorio/stack-facturador-smart
+    ports:
+      - "8080:80"
+    environment:
+      VIRTUAL_HOST: fact.solucionessystem.com,*.fact.solucionessystem.com
+    volumes:
+      - ./:/var/www/html
+      #- /home/cesar/stack-facturador-smart/proxy/fpms/smart1:/etc/nginx/sites-available
+      #- ../config/ngnix/sites-available:/etc/nginx/sites-available
+      - ../.docker/nginx/conf.d:/etc/nginx/conf.d
+    restart: always
+    labels:
+      - 'com.docker.compose.stack=principal'
+      - 'com.docker.compose.project=facturador'
+      - 'com.docker.compose.network=proxynet'
+      - 'com.docker.compose.service=ngnix'
+      # Configuración del Healthcheck
+    healthcheck:
+        # Comando para verificar que la configuración de Nginx es válida
+        test: ["CMD", "nginx", "-t"]
+        # El comando para arrancar Nginx es: nginx -g 'daemon off;'
+
+        # Intervalo entre comprobaciones
+        interval: 30s
+        # Tiempo máximo para que el comando responda
+        timeout: 5s
+        # Número de fallos consecutivos antes de ser considerado 'unhealthy'
+        retries: 3
+        # Período de gracia inicial para que Nginx se inicie
+        start_period: 10s
+  fpm1:
+    container_name: fpm1
+    # lo ajuste por el problema de las librerias (2025-10-22)
+    build:
+      context: .
+      dockerfile: ../.docker/php/Dockerfile.fpm74
+      #dockerfile: ../.docker/php/Dockerfile_prod.fpm81
+    # image: rash07/php-fpm:7.4
+    working_dir: /var/www/html
+    volumes:
+      - ./ssh:/root/.ssh
+      - ./ssh:/var/www/.ssh
+      - ./:/var/www/html
+    restart: always
+    labels:
+        - 'com.docker.compose.stack=principal'
+        - 'com.docker.compose.project=facturador'
+        - 'com.docker.compose.network=proxynet'
+        - 'com.docker.compose.service=fpmphp'
+    healthcheck:
+        # Comando para verificar que el servicio PHP-FPM está respondiendo
+        test: ["CMD", "php", "-r", "echo 'OK';"]
+        # Intervalo entre comprobaciones
+        interval: 30s
+        # Tiempo máximo para que el comando responda
+        timeout: 5s
+        # Número de fallos consecutivos antes de ser considerado 'unhealthy'
+        retries: 3
+        # Período de gracia inicial para que PHP-FPM se inicie
+        start_period: 10s
+
+  mariadb1:
+    container_name: mariadb1
+    image: mariadb:10.5.6
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_PORT_HOST: ${MYSQL_PORT_HOST}
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
+    volumes:
+      - mysqldata1:/var/lib/mysql
+      - ./healthcheck-my.cnf:/root/.my.cnf:ro
+    ports:
+      - "${MYSQL_PORT_HOST}:3306"
+    restart: always
+    labels:
+        - 'com.docker.compose.stack=principal'
+        - 'com.docker.compose.project=facturador'
+        - 'com.docker.compose.network=proxynet'
+        - 'com.docker.compose.service=mariadb'
+    healthcheck:
+        test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "--silent" ]
+        interval: 30s
+        timeout: 5s
+        retries: 3
+        start_period: 10s
+
+  redis1:
+    container_name: redis1
+    image: redis:alpine
+    volumes:
+      - redisdata1:/data
+    restart: always
+    labels:
+        - 'com.docker.compose.stack=principal'
+        - 'com.docker.compose.project=facturador'
+        - 'com.docker.compose.network=proxynet'
+
+  scheduling1:
+    container_name: scheduling1
+    image: rash07/scheduling
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    restart: always
+    labels:
+        - 'com.docker.compose.stack=principal'
+        - 'com.docker.compose.project=facturador'
+        - 'com.docker.compose.network=proxynet'
+        - 'com.docker.compose.service=scheduling'
+
+  supervisor1:
+    container_name: supervisor1
+    image: rash07/php7.4-supervisor
+#    build:
+#        context: .
+#        dockerfile: ../.docker/php_supervisor/Dockerfile.supervisor81
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - ../.docker/php_supervisor/supervisor.7.4.conf:/etc/supervisor/conf.d/supervisor.conf
+    restart: always
+    labels:
+        - 'com.docker.compose.stack=principal'
+        - 'com.docker.compose.project=facturador'
+        - 'com.docker.compose.network=proxynet'
+        - 'com.docker.compose.service=supervisor'
+
+networks:
+  default:
+    name: proxynet
+    external: true
+
+volumes:
+  redisdata1:
+    driver: local
+  mysqldata1:
+    driver: local

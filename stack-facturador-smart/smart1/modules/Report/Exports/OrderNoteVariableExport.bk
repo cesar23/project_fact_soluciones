@@ -1,0 +1,309 @@
+<?php
+
+namespace Modules\Report\Exports;
+
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Illuminate\Support\Collection;
+
+class OrderNoteVariableExport implements FromCollection, WithHeadings, ShouldAutoSize, WithStyles
+{
+    protected $collection;
+    protected $columns;
+    protected $mergeRanges = [];
+    protected $currentRow = 2;
+
+    public function __construct($collection, $columns)
+    {
+        $this->collection = $collection;
+        $this->columns = $columns;
+    }
+
+    public function collection()
+    {
+        $result = new Collection();
+        $lastCustomer = null;
+        $groupStartRow = 2;
+        $quantityTotal = 0;
+        $amountTotal = 0;
+        $grandTotal = 0;
+        $totalQuantityGeneral = 0;
+        
+        // Verificar si existen las columnas de cantidad y total
+        $hasQuantity = in_array('item_quantity', $this->columns);
+        $hasTotal = in_array('total', $this->columns);
+        $needTotals = $hasQuantity || $hasTotal;
+        
+        foreach ($this->collection->sortBy('person_type')->sortBy('customer_number') as $row) {
+            $customerKey = $row->customer_number.'-'.$row->customer_name;
+            
+            if ($lastCustomer !== $customerKey) {
+                // Agregar fila de totales para el cliente anterior
+                if ($lastCustomer !== null && $needTotals) {
+                    $totalRow = [];
+                    foreach ($this->columns as $column) {
+                        switch ($column) {
+                            case 'item_quantity':
+                                $totalRow[$column] = $hasQuantity ? $quantityTotal : '';
+                                break;
+                            case 'total':
+                                $totalRow[$column] = $hasTotal ? $amountTotal : '';
+                                break;
+                            case 'item_description':
+                                $totalRow[$column] = 'TOTAL';
+                                break;
+                            default:
+                                $totalRow[$column] = '';
+                        }
+                    }
+                    $result->push($totalRow);
+                    $this->currentRow++;
+                }
+                
+                if ($lastCustomer !== null && $this->currentRow > $groupStartRow) {
+                    $this->mergeRanges[] = [
+                        'start' => $groupStartRow,
+                        'end' => $this->currentRow - 1
+                    ];
+                }
+                
+                $lastCustomer = $customerKey;
+                $groupStartRow = $this->currentRow;
+                $quantityTotal = 0;
+                $amountTotal = 0;
+            }
+
+            // Acumular totales
+            if ($hasQuantity) {
+                $totalQuantityGeneral += $row->quantity;
+                $quantityTotal += $row->quantity;
+            }
+            if ($hasTotal) {
+                $grandTotal += $row->total;
+                $amountTotal += $row->total;
+            }
+
+            $rowData = [];
+            foreach ($this->columns as $column) {
+                switch ($column) {
+                    case 'person_type':
+                        $rowData[$column] = $row->person_type ?? '';
+                        break;
+                    case 'customer_number':
+                        $rowData[$column] = $this->currentRow === $groupStartRow ? $row->customer_number : '';
+                        break;
+                    case 'customer_name':
+                        $rowData[$column] = $this->currentRow === $groupStartRow ? $row->customer_name : '';
+                        break;
+                    case 'item_description':
+                        $rowData[$column] = $row->item_description;
+                        break;
+                    case 'item_quantity':
+                        $rowData[$column] = $row->quantity;
+                        break;
+                    case 'unit_price':
+                        $rowData[$column] = $row->unit_price;
+                        break;
+                    case 'total':
+                        $rowData[$column] = $row->total;
+                        break;
+                    case 'delivery_date':
+                        $rowData[$column] = $row->delivery_date;
+                        break;
+                    case 'created_time':
+                        $rowData[$column] = $row->created_time;
+                        break;
+                }
+            }
+            
+            $result->push($rowData);
+            $this->currentRow++;
+        }
+
+        // Procesar el último grupo y sus totales
+        if ($lastCustomer !== null) {
+            if ($needTotals) {
+                $totalRow = [];
+                foreach ($this->columns as $column) {
+                    switch ($column) {
+                        case 'item_quantity':
+                            $totalRow[$column] = $hasQuantity ? $quantityTotal : '';
+                            break;
+                        case 'total':
+                            $totalRow[$column] = $hasTotal ? $amountTotal : '';
+                            break;
+                        case 'item_description':
+                            $totalRow[$column] = 'TOTAL';
+                            break;
+                        default:
+                            $totalRow[$column] = '';
+                    }
+                }
+                $result->push($totalRow);
+                $this->currentRow++;
+            }
+            
+            $this->mergeRanges[] = [
+                'start' => $groupStartRow,
+                'end' => $this->currentRow - 1
+            ];
+        }
+
+        // Agregar total general si existe la columna total o cantidad
+        if ($hasTotal || $hasQuantity) {
+            // Agregar una fila vacía como separador
+            $emptyRow = array_fill_keys($this->columns, '');
+            $result->push($emptyRow);
+            $this->currentRow++;
+
+            // Agregar fila de total general
+            $totalGeneralRow = array_fill_keys($this->columns, '');
+            $totalGeneralRow['item_description'] = 'TOTAL GENERAL';
+            if ($hasQuantity) {
+                $totalGeneralRow['item_quantity'] = $totalQuantityGeneral;
+            }
+            if ($hasTotal) {
+                $totalGeneralRow['total'] = $grandTotal;
+            }
+            $result->push($totalGeneralRow);
+            
+            // Guardar el rango para aplicar estilo especial
+            $this->mergeRanges[] = [
+                'start' => $this->currentRow,
+                'end' => $this->currentRow,
+                'is_grand_total' => true
+            ];
+        }
+
+        return $result;
+    }
+
+    public function headings(): array
+    {
+        $labels = [
+            'person_type' => 'Tipo',
+            'customer_number' => 'DNI',
+            'customer_name' => 'Cliente',
+            'item_description' => 'Producto',
+            'delivery_date' => 'Fecha de entrega',
+            'created_time' => 'Hora',
+            'item_quantity' => 'Cantidad',
+            'unit_price' => 'Precio',
+            'total' => 'Monto'
+        ];
+
+        return array_map(function($column) use ($labels) {
+            return $labels[$column] ?? $column;
+        }, $this->columns);
+    }
+
+    public function styles(Worksheet $sheet)
+    {
+        $styles = [
+            1 => [
+                'font' => ['bold' => true],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'E8E8E8'],
+                ],
+                'borders' => [
+                    'bottom' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM],
+                ],
+            ]
+        ];
+
+        $customerNumberIndex = array_search('customer_number', $this->columns);
+        $lastColumnIndex = count($this->columns);
+        
+        if ($customerNumberIndex !== false) {
+            $totalStyle = [
+                'font' => ['bold' => true],
+                'borders' => [
+                    'top' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    ],
+                    'bottom' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                    ],
+                    'left' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                    ],
+                    'right' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                    ],
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'F8F9FA'],
+                ],
+            ];
+
+            foreach ($this->mergeRanges as $range) {
+                $colFirst = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(1);
+                $colLast = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastColumnIndex);
+                
+                if (isset($range['is_grand_total'])) {
+                    // Estilo especial para el total general
+                    $sheet->getStyle("{$colFirst}{$range['start']}:{$colLast}{$range['end']}")
+                        ->applyFromArray([
+                            'font' => ['bold' => true, 'size' => 12],
+                            'fill' => [
+                                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                                'startColor' => ['rgb' => 'D3D3D3'],
+                            ],
+                            'borders' => [
+                                'outline' => [
+                                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                                ],
+                                'top' => [
+                                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_DOUBLE,
+                                ],
+                                'bottom' => [
+                                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                                ],
+                            ],
+                        ]);
+                } else {
+                    // Primero aplicar el borde exterior del bloque
+                    $sheet->getStyle("{$colFirst}{$range['start']}:{$colLast}{$range['end']}")
+                        ->applyFromArray([
+                            'borders' => [
+                                'outline' => [
+                                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                                    'color' => ['rgb' => '000000'],
+                                ],
+                            ],
+                            'fill' => [
+                                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                                'startColor' => ['rgb' => 'FFFFFF'],
+                            ],
+                        ]);
+
+                    // Aplicar bordes internos a las celdas
+                    for ($row = $range['start']; $row <= $range['end']; $row++) {
+                        for ($col = 1; $col <= $lastColumnIndex; $col++) {
+                            $cellCoordinate = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col) . $row;
+                            $sheet->getStyle($cellCoordinate)->applyFromArray([
+                                'borders' => [
+                                    'allBorders' => [
+                                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                                        'color' => ['rgb' => '000000'],
+                                    ],
+                                ],
+                            ]);
+                        }
+                    }
+
+                    // Aplicar estilo a la fila de totales por cliente al final
+                    $sheet->getStyle("{$colFirst}{$range['end']}:{$colLast}{$range['end']}")
+                        ->applyFromArray($totalStyle);
+                }
+            }
+        }
+
+        return $styles;
+    }
+} 
