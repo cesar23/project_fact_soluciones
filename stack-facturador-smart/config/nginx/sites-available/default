@@ -1,0 +1,135 @@
+# =============================================================================
+# CONFIGURACIÓN NGINX PARA LARAVEL - SMART FACTURADOR
+# =============================================================================
+# 
+# Este archivo configura un servidor Nginx optimizado para aplicaciones Laravel
+# con PHP-FPM en entornos Docker. Proporciona seguridad, rendimiento y
+# compatibilidad con el stack de facturación.
+#
+# Características principales:
+# ✅ Seguridad reforzada
+# ✅ Optimización para Laravel
+# ✅ Compatibilidad Docker
+# ✅ Gestión de archivos estáticos
+# ✅ Configuración PHP-FPM
+#
+# =============================================================================
+
+server {
+    # -------------------------------------------------------------------------
+    # CONFIGURACIÓN BÁSICA DEL SERVIDOR
+    # -------------------------------------------------------------------------
+    
+    # Escucha en el puerto 80 (HTTP) como servidor por defecto
+    listen 80 default_server;
+    
+    # Directorio raíz de la aplicación Laravel
+    root /var/www/html/public;
+    
+    # Archivos de índice en orden de preferencia
+    index index.html index.htm index.php;
+    
+    # Acepta cualquier nombre de servidor (wildcard)
+    # Útil para entornos multi-tenant o subdominios
+    server_name *._;
+    
+    # Codificación de caracteres UTF-8 para soporte internacional
+    charset utf-8;
+    
+    # Oculta la versión de Nginx en las cabeceras (seguridad)
+    server_tokens off;
+    
+    # -------------------------------------------------------------------------
+    # GESTIÓN DE ARCHIVOS ESTATICOS
+    # -------------------------------------------------------------------------
+    
+    # Favicons: archivos pequeños, no registrar accesos para mejorar performance
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+    
+    # Archivo robots.txt: no registrar accesos
+    location = /robots.txt {
+        log_not_found off;
+        access_log off;
+    }
+    
+    # -------------------------------------------------------------------------
+    # RUTEO LARAVEL (Front Controller Pattern)
+    # -------------------------------------------------------------------------
+    
+    # Ruta principal: implementa el patrón Front Controller de Laravel
+    # Intenta servir archivos estáticos, si no existen, enruta a index.php
+    location / {
+        try_files $uri $uri/ /index.php$is_args$args;
+    }
+    
+    # -------------------------------------------------------------------------
+    # CONFIGURACIÓN PHP-FPM
+    # -------------------------------------------------------------------------
+    
+    # Procesamiento de archivos PHP mediante PHP-FPM
+    # NOTA: 'internal' significa que solo puede ser accedido internamente
+    # (no directamente desde el exterior, solo a través de rewrite)
+    location ~ \.php$ {
+        internal;
+        include snippets/fastcgi-php.conf;
+        
+        # Conexión al contenedor PHP-FPM
+        fastcgi_pass fpm1:9000;
+        
+        # Timeout extendido para procesos largos (1 hora)
+        # Ideal para facturación electrónica y procesos pesados
+        fastcgi_read_timeout 3600;
+    }
+    
+    # -------------------------------------------------------------------------
+    # SEGURIDAD - PROTECCIÓN DE DIRECTORIOS
+    # -------------------------------------------------------------------------
+    
+    # Bloquea acceso a archivos PHP/HTML en el directorio storage
+    # Previene ejecución no autorizada de código
+    location ~ /storage/.*\.(php|html)$ {
+        deny all;
+        return 403;
+    }
+    
+    # Protege archivos ocultos (.htaccess, .env, etc.)
+    location ~ /\.ht {
+        deny all;
+    }
+    
+    # -------------------------------------------------------------------------
+    # MANEJO DE ERRORES
+    # -------------------------------------------------------------------------
+    
+    # Página de error 404: enrutar a Laravel para manejo centralizado
+    error_page 404 /index.php;
+    
+    # -------------------------------------------------------------------------
+    # OPTIMIZACIONES ADICIONALES
+    # -------------------------------------------------------------------------
+    
+    # Cacheo de archivos estáticos (imágenes, CSS, JS)
+    location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+    
+    # Compresión Gzip (mejora performance)
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types
+        text/plain
+        text/css
+        text/xml
+        text/javascript
+        application/json
+        application/javascript
+        application/xml+rss
+        application/atom+xml
+        image/svg+xml;
+}

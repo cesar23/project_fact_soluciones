@@ -1,0 +1,108 @@
+FROM rash07/php-fpm:7.4
+
+# Actualizar sources a archive
+RUN echo "deb http://archive.debian.org/debian buster main" > /etc/apt/sources.list && \
+    echo "deb http://archive.debian.org/debian-security buster/updates main" >> /etc/apt/sources.list && \
+    echo "deb http://archive.debian.org/debian buster-updates main" >> /etc/apt/sources.list
+
+# Instalar extensiones necesarias y dependencias
+RUN apt-get update && apt-get install -y \
+    libzip-dev \
+    libxml2-dev \
+    libpng-dev \
+    libjpeg-dev \
+    inetutils-ping \
+    net-tools \
+    inetutils-telnet \
+    netcat-openbsd \
+    curl \
+    libfreetype6-dev \
+    # Dependencias para memcached
+    libmemcached-dev \
+    zlib1g-dev \
+    # Dependencias para imagick
+    libmagickwand-dev \
+    libmagickcore-dev \
+    imagemagick \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install zip soap gd pdo_mysql mysqli bcmath opcache \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar extensión memcached vía PECL
+RUN pecl install memcached-3.1.5 \
+    && docker-php-ext-enable memcached
+
+# Instalar extensión imagick vía PECL
+RUN pecl install imagick-3.4.4 \
+    && docker-php-ext-enable imagick
+
+# Instalar Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Crear php.ini desde la plantilla de producción
+RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
+
+# Configurar PHP para Laravel/Producción
+RUN { \
+    echo ''; \
+    echo '; Configuración optimizada para Laravel'; \
+    echo 'memory_limit = 256M'; \
+    echo 'max_execution_time = 300'; \
+    echo 'max_input_time = 300'; \
+    echo 'upload_max_filesize = 50M'; \
+    echo 'post_max_size = 50M'; \
+    echo 'max_input_vars = 5000'; \
+    echo 'max_file_uploads = 50'; \
+    echo ''; \
+    echo '; Errores y logging'; \
+    echo 'display_errors = Off'; \
+    echo 'display_startup_errors = Off'; \
+    echo 'error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT'; \
+    echo 'log_errors = On'; \
+    echo 'error_log = /var/log/php_errors.log'; \
+    echo ''; \
+    echo '; Timezone'; \
+    echo 'date.timezone = America/Lima'; \
+    echo ''; \
+    echo '; Session'; \
+    echo 'session.save_handler = files'; \
+    echo 'session.gc_maxlifetime = 1440'; \
+    echo 'session.cookie_httponly = 1'; \
+    echo 'session.cookie_secure = 0'; \
+    echo ''; \
+    echo '; OPcache - Optimización de rendimiento'; \
+    echo 'opcache.enable = 1'; \
+    echo 'opcache.enable_cli = 0'; \
+    echo 'opcache.memory_consumption = 128'; \
+    echo 'opcache.interned_strings_buffer = 16'; \
+    echo 'opcache.max_accelerated_files = 10000'; \
+    echo 'opcache.revalidate_freq = 2'; \
+    echo 'opcache.fast_shutdown = 1'; \
+    echo 'opcache.validate_timestamps = 1'; \
+    echo 'opcache.save_comments = 1'; \
+    echo ''; \
+    echo '; Realpath cache'; \
+    echo 'realpath_cache_size = 4096K'; \
+    echo 'realpath_cache_ttl = 120'; \
+    } >> /usr/local/etc/php/php.ini
+
+# Configurar PHP-FPM para aceptar conexiones desde otros contenedores Docker
+RUN sed -i 's/listen = 127.0.0.1:9000/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/www.conf && \
+    sed -i 's/;listen.allowed_clients = 127.0.0.1/;listen.allowed_clients = 0.0.0.0/' /usr/local/etc/php-fpm.d/www.conf
+
+# Optimizar configuración de PHP-FPM
+RUN { \
+    echo 'pm = dynamic'; \
+    echo 'pm.max_children = 50'; \
+    echo 'pm.start_servers = 5'; \
+    echo 'pm.min_spare_servers = 5'; \
+    echo 'pm.max_spare_servers = 35'; \
+    echo 'pm.max_requests = 500'; \
+    echo 'pm.process_idle_timeout = 10s'; \
+    echo 'pm.status_path = /status'; \
+    echo 'ping.path = /ping'; \
+    } >> /usr/local/etc/php-fpm.d/www.conf
+
+WORKDIR /var/www/html

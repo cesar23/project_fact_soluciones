@@ -1,0 +1,7 @@
+# Ignorar todo
+#*
+#.*
+.env
+# Excepto el .gitignore
+!.gitignore
+

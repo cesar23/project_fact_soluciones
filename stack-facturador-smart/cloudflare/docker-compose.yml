@@ -1,0 +1,26 @@
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    networks:
+      - proxynet
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "info"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s  # Ahora sí es compatible
+    labels:
+      - 'com.docker.compose.stack=secundario'
+      - 'com.docker.compose.project=facturador'
+      - 'com.docker.compose.network=proxynet'
+      - 'com.docker.compose.service=cloudflared'
+
+networks:
+  proxynet:
+    external: true

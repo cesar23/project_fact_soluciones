@@ -1,0 +1,37 @@
+
+services:
+
+  phpmyadmin:
+    image: phpmyadmin:5-apache
+    container_name: utils_phpmyadmin
+    env_file:
+      - .env
+    restart: unless-stopped
+    environment:
+      PUID: ${MY_UID:-1000}
+      PGID: ${MY_GID:-1000}
+      TZ: ${TZ}
+      PMA_HOST: ${MYSQL_CONTAINER}
+      PMA_PORT: ${MYSQL_PORT}
+      UPLOAD_LIMIT: 128M
+    ports:
+      - "9090:80"   # Acceso phpMyAdmin http://TU_IP:8080
+#    depends_on:
+#      - ${MYSQL_CONTAINER}
+    networks:
+      - proxynet
+    volumes:
+      - .../.docker/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro
+    labels:
+      - 'com.docker.compose.stack=secundario'
+      - 'com.docker.compose.project=facturador'
+      - 'com.docker.compose.network=proxynet'
+      - 'com.docker.compose.service=phpmyadmin'
+
+networks:
+  proxynet:
+    external: true
+    labels:
+      - "com.docker.compose.project=stack-facturador"
+      - "com.docker.compose.network=internal"
+

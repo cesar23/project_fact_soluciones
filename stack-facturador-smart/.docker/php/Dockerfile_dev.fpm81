@@ -1,0 +1,221 @@
+# =============================================================================
+# DOCKERFILE PARA PHP 8.1-FPM - SMART FACTURADOR (ENTORNO DE DESARROLLO)
+# =============================================================================
+# Este Dockerfile se basa en la imagen oficial de PHP 8.2-fpm-bookworm
+# y está optimizado para desarrollo Laravel con herramientas de debugging.
+# =============================================================================
+
+FROM php:8.1-fpm-bookworm
+
+# =============================================================================
+# CONFIGURACIÓN DE ENTORNO DE DESARROLLO
+# =============================================================================
+# Variables de entorno para desarrollo
+ENV APP_ENV=local
+ENV DEBUG_MODE=1
+ENV XDEBUG_MODE=debug,develop,coverage
+ENV XDEBUG_CONFIG="client_host=host.docker.internal"
+
+# =============================================================================
+# CONFIGURACIÓN DE REPOSITORIOS Y DEPENDENCIAS DEL SISTEMA
+# =============================================================================
+RUN apt-get update && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    libzip-dev \
+    libxml2-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libonig-dev \
+    libmagickwand-dev \
+    libicu-dev \
+    libmemcached-dev \
+    libssl-dev \
+    zlib1g-dev \
+    pkg-config \
+    inetutils-ping \
+    net-tools \
+    inetutils-telnet \
+    netcat-openbsd \
+    curl \
+    wget \
+    git \
+    unzip \
+    vim \
+    nano \
+    htop \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# =============================================================================
+# INSTALACIÓN Y CONFIGURACIÓN DE EXTENSIONES PHP
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Configuración inicial de extensiones GD y ZIP
+# -----------------------------------------------------------------------------
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure zip
+
+# -----------------------------------------------------------------------------
+# Extensiones PHP estándar
+# -----------------------------------------------------------------------------
+RUN docker-php-ext-install -j$(nproc) \
+    pdo_mysql \
+    mysqli \
+    bcmath \
+    opcache \
+    exif \
+    pcntl \
+    zip \
+    soap \
+    gd \
+    mbstring \
+    xml \
+    dom \
+    fileinfo \
+    ctype \
+    intl
+
+# -----------------------------------------------------------------------------
+# Instalación de extensiones PECL (imagick, redis, memcached)
+# -----------------------------------------------------------------------------
+RUN pecl install imagick redis memcached \
+    && docker-php-ext-enable imagick redis memcached
+
+# -----------------------------------------------------------------------------
+# Instalación de Xdebug para desarrollo (NO incluido en producción)
+# -----------------------------------------------------------------------------
+RUN pecl install xdebug \
+    && docker-php-ext-enable xdebug
+
+# =============================================================================
+# CONFIGURACIÓN DE PHP.INI PARA DESARROLLO
+# =============================================================================
+# Crear php.ini desde la plantilla de desarrollo
+RUN cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini
+RUN { \
+    echo ''; \
+    echo '; ========================================'; \
+    echo '; Configuración optimizada para Laravel (Desarrollo)'; \
+    echo '; ========================================'; \
+    echo ''; \
+    echo '; Límites de memoria y ejecución (más permisivos para desarrollo)'; \
+    echo 'memory_limit = 512M'; \
+    echo 'max_execution_time = 300'; \
+    echo 'max_input_time = 300'; \
+    echo 'upload_max_filesize = 100M'; \
+    echo 'post_max_size = 100M'; \
+    echo 'max_input_vars = 10000'; \
+    echo 'max_file_uploads = 100'; \
+    echo ''; \
+    echo '; Errores y logging (mostrar errores en desarrollo)'; \
+    echo 'display_errors = On'; \
+    echo 'display_startup_errors = On'; \
+    echo 'error_reporting = E_ALL'; \
+    echo 'log_errors = On'; \
+    echo 'error_log = /var/log/php_errors.log'; \
+    echo ''; \
+    echo '; Timezone'; \
+    echo 'date.timezone = America/Lima'; \
+    echo ''; \
+    echo '; Session'; \
+    echo 'session.save_handler = files'; \
+    echo 'session.gc_maxlifetime = 1440'; \
+    echo 'session.cookie_httponly = 1'; \
+    echo 'session.cookie_secure = 0'; \
+    echo 'session.cookie_samesite = Lax'; \
+    echo ''; \
+    echo '; Opcache (deshabilitado para desarrollo)'; \
+    echo 'opcache.enable = 0'; \
+    echo 'opcache.memory_consumption = 128'; \
+    echo 'opcache.interned_strings_buffer = 8'; \
+    echo 'opcache.max_accelerated_files = 10000'; \
+    echo 'opcache.revalidate_freq = 0'; \
+    echo 'opcache.fast_shutdown = 0'; \
+    echo ''; \
+    echo '; Realpath cache (deshabilitado para desarrollo)'; \
+    echo 'realpath_cache_size = 0'; \
+    echo 'realpath_cache_ttl = 0'; \
+    echo ''; \
+    echo '; Xdebug configuración para desarrollo'; \
+    echo 'xdebug.mode = debug,develop,coverage'; \
+    echo 'xdebug.start_with_request = yes'; \
+    echo 'xdebug.client_host = host.docker.internal'; \
+    echo 'xdebug.client_port = 9003'; \
+    echo 'xdebug.log_level = 0'; \
+    echo 'xdebug.max_nesting_level = 512'; \
+    echo 'xdebug.cli_color = 1'; \
+    echo 'xdebug.output_dir = /var/www/html/storage/debugbar'; \
+    echo 'xdebug.idekey = PHPSTORM'; \
+    } >> /usr/local/etc/php/php.ini
+
+# =============================================================================
+# CONFIGURACIÓN DE PHP-FPM PARA DESARROLLO
+# =============================================================================
+# Configurar PHP-FPM para aceptar conexiones desde otros contenedores Docker
+RUN sed -i 's/listen = 127.0.0.1:9000/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/www.conf && \
+    sed -i 's/;listen.allowed_clients = 127.0.0.1/;listen.allowed_clients = 0.0.0.0/' /usr/local/etc/php-fpm.d/www.conf
+
+# Optimizar configuración de PHP-FPM para desarrollo (menos procesos, más memoria por proceso)
+RUN { \
+    echo ''; \
+    echo '; ========================================'; \
+    echo '; Configuración de procesos PHP-FPM (Desarrollo)'; \
+    echo '; ========================================'; \
+    echo 'pm = dynamic'; \
+    echo 'pm.max_children = 10'; \
+    echo 'pm.start_servers = 2'; \
+    echo 'pm.min_spare_servers = 1'; \
+    echo 'pm.max_spare_servers = 4'; \
+    echo 'pm.max_requests = 0'; \
+    echo 'pm.process_idle_timeout = 60s'; \
+    } >> /usr/local/etc/php-fpm.d/www.conf
+
+# =============================================================================
+# INSTALACIÓN DE COMPOSER Y HERRAMIENTAS DE DESARROLLO
+# =============================================================================
+# Descargar e instalar Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+    && chmod +x /usr/local/bin/composer \
+    && composer --version
+
+
+
+# Instalar Laravel Sail (opcional para desarrollo)
+RUN curl -s "https://laravel.build/sail" | bash
+
+
+# Crear directorios de Laravel y establecer permisos
+RUN chmod -R 777 /var/www/html/storage
+
+
+
+# =============================================================================
+# LIMPIEZA FINAL DE ARCHIVOS TEMPORALES Y CACHÉ
+# =============================================================================
+RUN rm -rf /tmp/* /var/tmp/* /usr/local/src/* \
+    && find /var/log -type f -name "*.log" -exec truncate -s 0 {} \; 2>/dev/null || true \
+    && find /var/cache -type f -delete 2>/dev/null || true \
+    && find /usr/share/doc -depth -type f ! -name copyright -delete 2>/dev/null || true \
+    && find /usr/share/man -type f -delete 2>/dev/null || true
+
+
+# =============================================================================
+# CONFIGURACIÓN FINAL
+# =============================================================================
+# Crear directorio de logs y establecer permisos
+RUN mkdir -p /var/log && touch /var/log/php_errors.log && chmod 666 /var/log/php_errors.log
+
+# Establecer directorio de trabajo
+WORKDIR /var/www/html
+
+
+
+# Exponer puerto PHP-FPM
+EXPOSE 9000
+
+# Healthcheck para desarrollo (más tolerante)
+HEALTHCHECK --interval=30s --timeout=10s --retries=5 --start-period=15s \
+    CMD php -r "echo 'Development OK';" || exit 1

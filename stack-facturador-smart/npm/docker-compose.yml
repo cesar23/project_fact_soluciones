@@ -1,0 +1,41 @@
+
+
+services:
+  npm:
+    build:
+      # imagen con plugins ( certbot-dns-duckdns, certbot-dns-cloudflare )
+      context: .
+      dockerfile: ../.docker/nginx_proxymanager/Dockerfile
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-America/Lima}
+      DB_SQLITE_FILE: ${DB_SQLITE_FILE:-/data/database.sqlite}
+    volumes:
+      - ./data:/data
+      #- ./letsencrypt:/etc/letsencrypt
+      # ya no es  necesario
+      - ./cloudflare.ini:/etc/letsencrypt/cloudflare.ini:ro
+    ports:
+      # Tiene que estar  abierto  siempre el puerto 80
+      - "${HTTP_PORT:-80}:80"       # HTTP público
+      - "${HTTPS_PORT:-443}:443"    # HTTPS público
+      - "${ADMIN_PORT:-81}:81"      # Panel admin (solo local)
+    networks:
+      - proxynet
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:81"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - 'com.docker.compose.stack=secundario'
+      - 'com.docker.compose.project=facturador'
+      - 'com.docker.compose.network=proxynet'
+      - 'com.docker.compose.service=proxy-manager'
+
+
+networks:
+  proxynet:
+    external: true

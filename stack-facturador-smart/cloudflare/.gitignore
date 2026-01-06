@@ -1,0 +1,7 @@
+# Ignorar todo
+#*
+#.*
+.env
+!smart1.tar.gz
+# Excepto el .gitignore
+!.gitignore
