@@ -1,0 +1,48 @@
+# Flujo de trabajo para generar changelog automático
+# Versión simplificada para principiantes
+
+name: Generar Changelog
+
+# Eventos que activan la generación de changelog
+on:
+  push:
+    branches: [ main, master ]
+  release:
+    types: [published]
+
+jobs:
+  # Job de generación de changelog
+  generate-changelog:
+    name: Generar Changelog
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Paso 1: Checkout del código
+    - name: Checkout código
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    # Paso 2: Generar changelog automático
+    - name: Generar changelog
+      uses: requarks/changelog-action@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ github.ref_name }}
+        output: CHANGELOG.md
+    
+    # Paso 3: Commit del changelog
+    - name: Commit changelog
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add CHANGELOG.md
+        git commit -m "docs: actualizar changelog para ${{ github.ref_name }}"
+        git push
+    
+    # Paso 4: Notificar
+    - name: Notificar generación
+      run: |
+        echo "📝 Changelog generado y commitido"
+        echo "🏷️  Versión: ${{ github.ref_name }}"
+        echo "📄 Archivo: CHANGELOG.md"

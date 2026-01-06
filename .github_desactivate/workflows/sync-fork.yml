@@ -1,0 +1,81 @@
+# Flujo de trabajo para sincronizar forks
+# Versión simplificada para principiantes
+
+name: Sincronizar Fork
+
+# Eventos que activan el workflow
+on:
+  schedule:
+    # Ejecutar todos los días a las 8 AM UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch:  # Permite ejecución manual
+    inputs:
+      target_branch:
+        description: 'Rama objetivo para sincronizar'
+        required: false
+        default: 'main'
+
+jobs:
+  # Job de sincronización
+  sync:
+    name: Sincronizar fork con upstream
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Paso 1: Checkout del código
+    - name: Checkout código
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    # Paso 2: Configurar Git
+    - name: Configurar Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+    
+    # Paso 3: Agregar upstream remote
+    - name: Agregar upstream
+      run: |
+        # Reemplaza con tu repositorio upstream
+        git remote add upstream https://github.com/solucionessystem/stack-facturador-smart.git || true
+        git fetch upstream
+    
+    # Paso 4: Sincronizar con upstream
+    - name: Sincronizar con upstream
+      run: |
+        TARGET_BRANCH="${{ github.event.inputs.target_branch || 'main' }}"
+        
+        echo "🔄 Sincronizando fork con upstream/$TARGET_BRANCH"
+        
+        # Cambiar a la rama objetivo
+        git checkout $TARGET_BRANCH
+        
+        # Merge con upstream
+        git merge upstream/$TARGET_BRANCH
+        
+        # Si hay conflictos, abortar
+        if [ $? -ne 0 ]; then
+          echo "❌ Conflicto de merge detectado. Abortando..."
+          git merge --abort
+          exit 1
+        fi
+        
+        # Push a fork
+        git push origin $TARGET_BRANCH
+        
+        echo "✅ Fork sincronizado exitosamente"
+    
+    # Paso 5: Notificar resultado
+    - name: Notificar resultado
+      if: always()
+      run: |
+        if [ $? -eq 0 ]; then
+          echo "🎉 Sincronización completada exitosamente"
+          echo "📅 Fecha: $(date)"
+          echo "🌿 Rama: ${{ github.event.inputs.target_branch || 'main' }}"
+        else
+          echo "❌ Sincronización fallida"
+          echo "📅 Fecha: $(date)"
+          echo "⚠️  Por favor revisa los conflictos manualmente"
+        fi

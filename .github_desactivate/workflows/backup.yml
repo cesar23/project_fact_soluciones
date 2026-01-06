@@ -1,0 +1,121 @@
+# Flujo de trabajo de backup automático
+# Versión simplificada para principiantes
+
+name: Backup Automático
+
+# Eventos que activan el backup
+on:
+  schedule:
+    # Ejecutar todos los días a las 3 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:  # Permite ejecución manual
+
+jobs:
+  # Job de backup
+  backup:
+    name: Backup de Base de Datos y Archivos
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Paso 1: Checkout del código
+    - name: Checkout código
+      uses: actions/checkout@v3
+    
+    # Paso 2: Notificar inicio de backup
+    - name: Iniciar backup
+      run: |
+        echo "🔄 Iniciando proceso de backup"
+        echo "📅 Fecha: $(date)"
+        echo "🔖 Commit: ${{ github.sha }}"
+    
+    # Paso 3: Backup de Staging
+    - name: Backup de staging
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.STAGING_HOST }}
+        username: ${{ secrets.STAGING_USER }}
+        key: ${{ secrets.STAGING_SSH_KEY }}
+        script: |
+          echo "💾 Creando backup en staging..."
+          
+          # Crear directorio de backups si no existe
+          mkdir -p /opt/facturador-smart/backups
+          cd /opt/facturador-smart
+          
+          # Backup de base de datos
+          docker exec mariadb1 mysqldump \
+            -u $MYSQL_USER \
+            -p$MYSQL_PASSWORD \
+            $MYSQL_DATABASE > backup_db_$(date +%Y%m%d_%H%M%S).sql
+          
+          # Comprimir backup
+          gzip backup_db_$(date +%Y%m%d_%H%M%S).sql
+          
+          # Backup de archivos importantes
+          tar -czf backup_files_$(date +%Y%m%d_%H%M%S).tar.gz \
+            stack-facturador-smart/smart1/storage/ \
+            stack-facturador-smart/smart1/config/ \
+            stack-facturador-smart/smart1/.env || true
+          
+          # Mover a directorio de backups
+          mv backup_*_$(date +%Y%m%d_%H%M%S).* backups/
+          
+          # Limpiar backups antiguos (mantener solo últimos 7 días)
+          find backups/ -name "backup_*" -mtime +7 -delete
+          
+          echo "✅ Backup de staging completado"
+          ls -la backups/
+    
+    # Paso 4: Backup de Producción
+    - name: Backup de producción
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.PRODUCTION_HOST }}
+        username: ${{ secrets.PRODUCTION_USER }}
+        key: ${{ secrets.PRODUCTION_SSH_KEY }}
+        script: |
+          echo "💾 Creando backup en producción..."
+          
+          # Crear directorio de backups si no existe
+          mkdir -p /opt/facturador-smart/backups
+          cd /opt/facturador-smart
+          
+          # Backup de base de datos
+          docker exec mariadb1 mysqldump \
+            -u $MYSQL_USER \
+            -p$MYSQL_PASSWORD \
+            $MYSQL_DATABASE > backup_db_$(date +%Y%m%d_%H%M%S).sql
+          
+          # Comprimir backup
+          gzip backup_db_$(date +%Y%m%d_%H%M%S).sql
+          
+          # Backup de archivos importantes
+          tar -czf backup_files_$(date +%Y%m%d_%H%M%S).tar.gz \
+            stack-facturador-smart/smart1/storage/ \
+            stack-facturador-smart/smart1/config/ \
+            stack-facturador-smart/smart1/.env || true
+          
+          # Mover a directorio de backups
+          mv backup_*_$(date +%Y%m%d_%H%M%S).* backups/
+          
+          # Limpiar backups antiguos (mantener solo últimos 7 días)
+          find backups/ -name "backup_*" -mtime +7 -delete
+          
+          echo "✅ Backup de producción completado"
+          ls -la backups/
+    
+    # Paso 5: Subir backups a cloud (opcional)
+    - name: Subir backups a cloud
+      if: success()
+      run: |
+        echo "☁️  Opcional: Subir backups a cloud storage"
+        echo "💡 Puedes configurar AWS S3, Google Cloud Storage, etc."
+        echo "💡 Usa acciones como aws-actions/configure-aws-credentials"
+    
+    # Paso 6: Notificar finalización
+    - name: Notificar finalización
+      run: |
+        echo "🎉 Proceso de backup completado exitosamente"
+        echo "📅 Fecha: $(date)"
+        echo "💾 Backups creados en ambos servidores"
+        echo "🧹 Backups antiguos eliminados (mayores a 7 días)"

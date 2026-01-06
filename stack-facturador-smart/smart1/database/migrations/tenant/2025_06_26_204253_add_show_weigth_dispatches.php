@@ -1,0 +1,38 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+//2025_06_26_204253_add_show_weigth_dispatches
+class AddShowWeigthDispatches extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::table('configurations', function (Blueprint $table) {
+            $table->boolean('show_weigth_dispatches')->default(true);
+        });
+
+    
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::table('configurations', function (Blueprint $table) {
+            $table->dropColumn('show_weigth_dispatches');
+        });
+
+        
+    }
+}

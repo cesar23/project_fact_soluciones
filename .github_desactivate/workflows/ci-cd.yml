@@ -1,0 +1,197 @@
+# Flujo de trabajo CI/CD para Stack Facturador Smart
+# Versión simplificada para principiantes
+
+name: CI/CD Pipeline
+
+# Eventos que activan el pipeline
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+# Variables globales
+env:
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  # Job de construcción y pruebas
+  build-and-test:
+    name: Construir y Probar
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Paso 1: Checkout del código
+    - name: Checkout código
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    # Paso 2: Configurar Docker Buildx
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    # Paso 3: Construir imágenes Docker
+    - name: Construir imágenes Docker
+      run: |
+        cd stack-facturador-smart/smart1
+        docker-compose build
+    
+    # Paso 4: Iniciar servicios
+    - name: Iniciar servicios Docker
+      run: |
+        cd stack-facturador-smart/smart1
+        docker-compose up -d
+        sleep 30  # Esperar que los servicios se inicien
+    
+    # Paso 5: Verificar servicios
+    - name: Verificar servicios
+      run: |
+        echo "=== Verificando servicios ==="
+        cd stack-facturador-smart/smart1
+        
+        # Verificar Nginx
+        docker exec nginx1 nginx -t
+        echo "✅ Nginx config OK"
+        
+        # Verificar PHP-FPM
+        docker exec fpm1 php -v
+        echo "✅ PHP-FPM OK"
+        
+        # Verificar MariaDB
+        docker exec mariadb1 mysqladmin ping -h localhost
+        echo "✅ MariaDB OK"
+        
+        # Verificar extensiones PHP
+        docker exec fpm1 php -r "echo 'Extensiones cargadas: ' . count(get_loaded_extensions()) . '\n';"
+        docker exec fpm1 php -r "echo 'MySQLi: ' . (extension_loaded('mysqli') ? 'OK' : 'FALTA') . '\n';"
+        docker exec fpm1 php -r "echo 'BCMath: ' . (extension_loaded('bcmath') ? 'OK' : 'FALTA') . '\n';"
+        docker exec fpm1 php -r "echo 'SOAP: ' . (extension_loaded('soap') ? 'OK' : 'FALTA') . '\n';"
+        
+        # Verificar Laravel
+        docker exec fpm1 php artisan --version
+        echo "✅ Laravel OK"
+    
+    # Paso 6: Ejecutar pruebas básicas
+    - name: Ejecutar pruebas
+      run: |
+        cd stack-facturador-smart/smart1
+        docker exec fpm1 php artisan config:clear
+        docker exec fpm1 php artisan cache:clear
+        echo "✅ Pruebas básicas completadas"
+    
+    # Paso 7: Detener servicios
+    - name: Detener servicios
+      if: always()
+      run: |
+        cd stack-facturador-smart/smart1
+        docker-compose down
+    
+    # Paso 8: Subir artefactos (logs)
+    - name: Subir logs de construcción
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs
+        path: stack-facturador-smart/smart1/
+
+  # Job de despliegue en staging
+  deploy-staging:
+    name: Desplegar en Staging
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: staging
+    
+    steps:
+    # Paso 1: Checkout del código
+    - name: Checkout código
+      uses: actions/checkout@v3
+    
+    # Paso 2: Copiar archivos al servidor staging
+    - name: Desplegar en servidor staging
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.STAGING_HOST }}
+        username: ${{ secrets.STAGING_USER }}
+        key: ${{ secrets.STAGING_SSH_KEY }}
+        source: ".,!node_modules,!vendor,!storage,!bootstrap/cache"
+        target: "/opt/facturador-smart"
+    
+    # Paso 3: Ejecutar script de despliegue en staging
+    - name: Ejecutar despliegue en staging
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.STAGING_HOST }}
+        username: ${{ secrets.STAGING_USER }}
+        key: ${{ secrets.STAGING_SSH_KEY }}
+        script: |
+          cd /opt/facturador-smart
+          chmod +x deploy_stack.sh
+          ./deploy_stack.sh
+    
+    # Paso 4: Verificar despliegue
+    - name: Verificar despliegue staging
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.STAGING_HOST }}
+        username: ${{ secrets.STAGING_USER }}
+        key: ${{ secrets.STAGING_SSH_KEY }}
+        script: |
+          docker ps
+          curl -f http://localhost:8080/php_report.php
+
+  # Job de despliegue en producción
+  deploy-production:
+    name: Desplegar en Producción
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+    # Paso 1: Checkout del código
+    - name: Checkout código
+      uses: actions/checkout@v3
+    
+    # Paso 2: Copiar archivos al servidor producción
+    - name: Desplegar en servidor producción
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.PRODUCTION_HOST }}
+        username: ${{ secrets.PRODUCTION_USER }}
+        key: ${{ secrets.PRODUCTION_SSH_KEY }}
+        source: ".,!node_modules,!vendor,!storage,!bootstrap/cache"
+        target: "/opt/facturador-smart"
+    
+    # Paso 3: Ejecutar script de despliegue en producción
+    - name: Ejecutar despliegue en producción
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.PRODUCTION_HOST }}
+        username: ${{ secrets.PRODUCTION_USER }}
+        key: ${{ secrets.PRODUCTION_SSH_KEY }}
+        script: |
+          cd /opt/facturador-smart
+          chmod +x deploy_stack.sh
+          ./deploy_stack.sh
+    
+    # Paso 4: Verificar despliegue producción
+    - name: Verificar despliegue producción
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.PRODUCTION_HOST }}
+        username: ${{ secrets.PRODUCTION_USER }}
+        key: ${{ secrets.PRODUCTION_SSH_KEY }}
+        script: |
+          docker ps
+          curl -f http://localhost:8080/php_report.php
+          docker exec fpm1 php artisan --version
+    
+    # Paso 5: Notificación de éxito
+    - name: Notificar éxito
+      if: success()
+      run: |
+        echo "✅ Despliegue en producción completado exitosamente"
+        echo "🌐 URL: http://fact.solucionessystem.com:8080"

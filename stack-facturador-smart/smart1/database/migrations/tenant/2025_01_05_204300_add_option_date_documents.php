@@ -1,0 +1,38 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+//2025_01_05_204300_add_option_date_documents
+
+class AddOptionDateDocuments extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+
+
+        Schema::table('configurations', function (Blueprint $table) {
+            $table->boolean('date_documents_filter')->default(true);
+        });
+    }
+
+
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        //
+        Schema::table('configurations', function (Blueprint $table) {
+            $table->dropColumn('date_documents_filter');
+        });
+    }
+}

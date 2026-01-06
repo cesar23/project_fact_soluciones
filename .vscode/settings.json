@@ -1,0 +1,75 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/.vscode": false
+  },
+  "editor.tabSize": 2,
+  "editor.wordWrap": "on",
+  "editor.bracketPairColorization.enabled": true,
+  "liveServer.settings.root": "/web_static",
+
+  "code-runner.executorMap": {
+    "javascript": "\"C:\\Program Files\\nodejs\\node.exe\"",
+    "python": "python.exe",
+    "php": "\"C:\\laragon\\bin\\php\\php-8.2.25-Win32-vs16-x64\\php.exe\"",
+    "java": "javac",
+    "c": "gcc $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+    "cpp": "g++ $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+    "shellscript": "\"C:\\Program Files\\Git\\bin\\bash.exe\"",
+    "powershell": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy ByPass -File"
+  },
+  //=============================
+  // 📝 Local History
+  //=============================
+  // 🔁 Número de días que se guardarán los historiales locales.
+  // Después de este límite, los archivos antiguos serán eliminados automáticamente.
+  // Pon 0 si no deseas borrar nunca.
+  "local-history.daysLimit": 15,
+
+  // 👁️ Cantidad máxima de archivos que se mostrarán en la lista visual de historial.
+  // No afecta cuántos se guardan realmente, solo lo visible en los menús del plugin.
+  "local-history.maxDisplay": 20,
+
+  // ⏳ Tiempo (en segundos) de retraso antes de guardar una copia del historial
+  // tras haber guardado el archivo en VSCode. Útil si haces muchos guardados rápidos.
+  // 0 = sin retraso.
+  "local-history.saveDelay": 0,
+
+  // 🌐 Formato regional para mostrar las fechas en el historial.
+  // Ejemplo: "es-PE" (Español Perú), "en-US" (Inglés EE.UU.), "fr-FR" (Francés).
+  "local-history.dateLocale": "es-PE",
+
+  // 📂 Carpeta donde se almacenarán los historiales.
+  // Puedes usar rutas absolutas (como D:/historiales/vscode) o variables.
+  // Aquí usamos la carpeta .vscode dentro del proyecto actual.
+  "local-history.path": "${workspaceFolder}/.vscode/.history",
+
+  // 🧭 Define si se guardarán los archivos en ruta absoluta o relativa.
+  // true: guarda como <path>/.history/C:/mi_proyecto/archivo.js
+  // false (recomendado): guarda como <path>/.history/mi_proyecto/archivo.js
+  "local-history.absolute": false,
+
+  // 🔌 Controla cuándo se activa el plugin:
+  // 0 = nunca guardar historial,
+  // 1 = siempre guardar (incluso si no hay carpeta de proyecto),
+  // 2 = solo guardar si estás en un workspace abierto.
+  "local-history.enabled": 2,
+
+  // 🚫 Lista de carpetas o archivos que quieres excluir del historial.
+  // Usa patrones glob. Ideal para carpetas grandes o irrelevantes como node_modules.
+  "local-history.exclude": [
+    "**/.history/**",       // No guardar cambios en la carpeta del historial
+    "**/.vscode/**",        // Excluir archivos internos de configuración
+    "**/node_modules/**",   // No guardar dependencias
+    "**/wp-includes/**",   // No guardar dependencias
+    "**/dist/**",           // Evitar archivos compilados
+    "**/out/**"             // Archivos de salida del proyecto
+  ]
+}

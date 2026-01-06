@@ -1,0 +1,5 @@
+*.tar.gz filter=lfs diff=lfs merge=lfs -text
+stack-facturador-smart/smart1.tar.gz filter=lfs diff=lfs merge=lfs -text
+*.map filter=lfs diff=lfs merge=lfs -text
+stack-facturador-smart/smart1/.git.zip filter=lfs diff=lfs merge=lfs -text
+stack-facturador-smart/smart1/public/js/app.js.map filter=lfs diff=lfs merge=lfs -text

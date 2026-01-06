@@ -1,0 +1,102 @@
+# Flujo de trabajo de bienvenida para nuevos contribuidores
+# Versión simplificada para principiantes
+
+name: Bienvenida a Contribuidores
+
+# Eventos que activan el workflow
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  # Job de bienvenida
+  welcome:
+    name: Dar la bienvenida a nuevos contribuidores
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Verificar si es el primer contribution
+    - name: Verificar primer contribution
+      uses: actions/github-script@v6
+      id: check-contributor
+      with:
+        script: |
+          const { data: issues } = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            creator: context.payload.sender.login,
+            state: 'all'
+          });
+          
+          const isFirstContribution = issues.length <= 1;
+          return isFirstContribution;
+    
+    # Dar la bienvenida si es primer contribution
+    - name: Bienvenida a nuevos contribuidores
+      if: steps.check-contributor.outputs.result == 'true'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const message = `
+          🎉 **¡Bienvenido/a a Stack Facturador Smart!** 🎉
+          
+          ¡Gracias por tu primera contribution a este proyecto! 🇵🇪
+          
+          ### 📋 Recursos útiles:
+          - [Guía de Contribución](.github/CONTRIBUTING.md)
+          - [Documentación del Proyecto](README.md)
+          - [Configuración de GitHub Actions](.github/workflows/README.md)
+          
+          ### 🚀 Próximos pasos:
+          1. Lee nuestra guía de contribución
+          2. Configura tu ambiente de desarrollo
+          3. Busca issues con la etiqueta \`good first issue\`
+          4. ¡Sigue contribuyendo!
+          
+          ### 💬 ¿Necesitas ayuda?
+          - Revisa nuestra documentación
+          - Crea un issue si tienes preguntas
+          - Contacta al equipo: devops@solucionessystem.com
+          
+          ¡Estamos emocionados de tenerte en la comunidad! 🚀
+          `;
+          
+          if (context.payload.issue) {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: message
+            });
+          } else if (context.payload.pull_request) {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: message
+            });
+          }
+    
+    # Agregar etiqueta de primer contribution
+    - name: Etiquetar primer contribution
+      if: steps.check-contributor.outputs.result == 'true'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          if (context.payload.issue) {
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              labels: ['first-contribution']
+            });
+          } else if (context.payload.pull_request) {
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['first-contribution']
+            });
+          }

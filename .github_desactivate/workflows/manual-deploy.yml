@@ -1,0 +1,121 @@
+# Flujo de trabajo para despliegue manual
+# Versión simplificada para principiantes
+
+name: Despliegue Manual
+
+# Eventos que activan el pipeline
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Entorno de despliegue'
+        required: true
+        type: choice
+        options:
+        - staging
+        - production
+      confirm:
+        description: '¿Estás seguro de desplegar?'
+        required: true
+        type: choice
+        options:
+        - si
+        - no
+
+jobs:
+  # Job de despliegue manual
+  manual-deploy:
+    name: Despliegue Manual a ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'si'
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+    # Paso 1: Verificar confirmación
+    - name: Verificar confirmación
+      run: |
+        echo "🚀 Iniciando despliegue manual a ${{ github.event.inputs.environment }}"
+        echo "📅 Fecha: $(date)"
+        echo "👤 Usuario: ${{ github.actor }}"
+        echo "🔖 Commit: ${{ github.sha }}"
+    
+    # Paso 2: Checkout del código
+    - name: Checkout código
+      uses: actions/checkout@v3
+    
+    # Paso 3: Determinar servidor destino
+    - name: Determinar servidor destino
+      id: server
+      run: |
+        if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
+          echo "HOST=${{ secrets.STAGING_HOST }}" >> $GITHUB_ENV
+          echo "USER=${{ secrets.STAGING_USER }}" >> $GITHUB_ENV
+          echo "KEY=${{ secrets.STAGING_SSH_KEY }}" >> $GITHUB_ENV
+        else
+          echo "HOST=${{ secrets.PRODUCTION_HOST }}" >> $GITHUB_ENV
+          echo "USER=${{ secrets.PRODUCTION_USER }}" >> $GITHUB_ENV
+          echo "KEY=${{ secrets.PRODUCTION_SSH_KEY }}" >> $GITHUB_ENV
+        fi
+        echo "🎯 Servidor destino: $HOST"
+    
+    # Paso 4: Construir imágenes localmente para verificación
+    - name: Construir imágenes Docker
+      run: |
+        cd stack-facturador-smart/smart1
+        docker-compose build
+        echo "✅ Imágenes construidas correctamente"
+    
+    # Paso 5: Copiar archivos al servidor
+    - name: Copiar archivos al servidor
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ env.HOST }}
+        username: ${{ env.USER }}
+        key: ${{ env.KEY }}
+        source: ".,!node_modules,!vendor,!storage,!bootstrap/cache"
+        target: "/opt/facturador-smart"
+    
+    # Paso 6: Ejecutar script de despliegue
+    - name: Ejecutar despliegue
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ env.HOST }}
+        username: ${{ env.USER }}
+        key: ${{ env.KEY }}
+        script: |
+          echo "🚀 Iniciando despliegue en ${{ github.event.inputs.environment }}"
+          cd /opt/facturador-smart
+          chmod +x deploy_stack.sh
+          ./deploy_stack.sh
+          echo "✅ Despliegue completado"
+    
+    # Paso 7: Verificar despliegue
+    - name: Verificar despliegue
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ env.HOST }}
+        username: ${{ env.USER }}
+        key: ${{ env.KEY }}
+        script: |
+          echo "=== Estado de contenedores ==="
+          docker ps
+          echo ""
+          echo "=== Verificación de servicios ==="
+          docker exec nginx1 nginx -t
+          docker exec fpm1 php -v
+          docker exec mariadb1 mysqladmin ping -h localhost
+          echo ""
+          echo "=== Verificación de aplicación ==="
+          curl -f http://localhost:8080/php_report.php
+          echo ""
+          echo "=== Versión de Laravel ==="
+          docker exec fpm1 php artisan --version
+    
+    # Paso 8: Notificación de finalización
+    - name: Notificar finalización
+      run: |
+        echo "🎉 Despliegue manual completado exitosamente"
+        echo "🌍 Entorno: ${{ github.event.inputs.environment }}"
+        echo "🔗 URL: http://${{ env.HOST }}:8080"
+        echo "👤 Desplegado por: ${{ github.actor }}"
+        echo "📅 Fecha: $(date)"

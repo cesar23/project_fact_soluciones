@@ -1,0 +1,40 @@
+# Ide Helper
+_ide_helper.php
+
+BACKUPS/*
+
+# Laravel
+/vendor
+/node_modules
+**/node_modules
+/data_docker/mongo
+/data_docker/mysql
+
+# Excluir carpeta smart1 y archivos grandes
+
+
+**/cache
+**/dist
+
+**/vendor
+
+
+.idea
+# Composer
+composer.phar
+#composer.lock
+
+
+# Laravel4
+/bootstrap/compiled.php
+/log/*
+#.env.development.*.php
+#.env.development.php
+
+
+# Ignora los ficheros *.o y *.a *.zip
+*.iso
+*.[ao]
+*.rar
+
+
