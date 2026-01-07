@@ -158,13 +158,13 @@ inotifywait -m -r -e modify,create,delete --format '%T %w%f %e' \
  --timefmt '%Y-%m-%d %H:%M:%S' \
   /home/cesar/docker-stacks/project_fact_soluciones/stack-facturador-smart/smart1
 
+# ═══════════════════════════════════════════════════════════════
+# PASO 7: Configurar Git en el contenedor
+# ═══════════════════════════════════════════════════════════════
 
-
-
-
-
-
-# Configurar Git en el contenedor
+# Obtener cambios del repositorio para no aya  conflictos despues
+git fetch origin master
+git reset --hard origin/master
 
 
 
@@ -217,14 +217,22 @@ cd "/home/cesar/docker-stacks/project_fact_soluciones/stack-facturador-smart/sma
 sudo chmod -R 777 "./storage/" "./bootstrap/" "./vendor/"
 ```
 
-### PASO 7: INICIAR SUPERVISOR
+### PASO 7: INICIAR SUPERVISOR si no iniciado
 
 ```bash
+
+docker exec supervisor1 bash -c "service supervisor start"
+docker exec supervisor1 bash -c "supervisorctl reread"
+docker exec supervisor1 bash -c "supervisorctl update"
+docker exec supervisor1 bash -c "supervisorctl start all"
+docker exec supervisor1 bash -c "supervisorctl status"
+
 
 docker compose exec -T supervisor1 service supervisor start
 docker compose exec -T supervisor1 supervisorctl reread
 docker compose exec -T supervisor1 supervisorctl update
 docker compose exec -T supervisor1 supervisorctl start all
+
 # verifica status
 docker compose exec -T supervisor1 supervisorctl status
 
@@ -247,6 +255,9 @@ docker compose -f stack-facturador-smart/cloudflare/docker-compose.yml up -d
 
 # Iniciar Nginx Proxy Manager
 docker compose -f stack-facturador-smart/npm/docker-compose.yml up -d
+
+# Iniciar Portaine 
+docker compose -f stack-facturador-smart/portainer/docker-compose.yml up -d
 
 # Esperar estabilización
 sleep 5

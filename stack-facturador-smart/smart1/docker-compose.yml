@@ -124,10 +124,12 @@ services:
 
   supervisor1:
     container_name: supervisor1
-    image: rash07/php7.4-supervisor
-#    build:
-#        context: .
-#        dockerfile: ../.docker/php_supervisor/Dockerfile.supervisor81
+#    image: rash07/php7.4-supervisor
+    build:
+        context: ../.docker/php_supervisor
+        dockerfile: Dockerfile.supervisor74
+        # Fallback a imagen si el build falla (comentado, usa local build)
+        # image: rash07/php7.4-supervisor
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html

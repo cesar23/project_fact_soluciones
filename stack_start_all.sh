@@ -45,6 +45,7 @@ declare -A SERVICES=(
     ["stack-facturador-smart/utils/docker-compose.yml"]="Utilidades (phpMyAdmin)"
     ["stack-facturador-smart/cloudflare/docker-compose.yml"]="Cloudflare Tunnel"
     ["stack-facturador-smart/npm/docker-compose.yml"]="Nginx Proxy Manager"
+    ["stack-facturador-smart/portainer/docker-compose.yml"]="Portainer"
 )
 
 # Contadores

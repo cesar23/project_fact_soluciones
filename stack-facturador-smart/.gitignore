@@ -1,5 +1,7 @@
 # Ignorar todo
 #*
 #.*
+# que es que  se  saca
+smart1_back*
 # Excepto el .gitignore
 !.gitignore

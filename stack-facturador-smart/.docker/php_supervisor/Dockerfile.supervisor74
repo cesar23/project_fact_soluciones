@@ -1,0 +1,33 @@
+FROM rash07/php7.4-supervisor
+
+# Información del mantenedor
+LABEL maintainer="tu-email@ejemplo.com"
+LABEL description="Imagen PHP 7.4 con Supervisor para Laravel"
+
+# Variables de entorno
+ENV TZ=America/Lima
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_NO_INTERACTION=1
+
+
+# Copiar script de inicio
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+
+RUN chmod +x /usr/local/bin/entrypoint.sh \
+    && ln -s /usr/local/bin/entrypoint.sh /entrypoint.sh
+
+
+
+
+# Directorio de trabajo
+WORKDIR /var/www/html
+
+# Exponer puertos
+EXPOSE 9000
+
+# Healthcheck para verificar que PHP-FPM está funcionando
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+    CMD php-fpm-healthcheck || exit 1
+
+# Comando por defecto - ejecutar Supervisor
+CMD ["/usr/local/bin/entrypoint.sh"]
