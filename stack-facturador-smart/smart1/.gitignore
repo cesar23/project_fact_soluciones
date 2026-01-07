@@ -5,5 +5,6 @@
 # Excepto el .gitignore
 !.gitignore
 # omitimos los archivos de aqui . por que tiene muchos ficheros
+public/*
 public/js
 public/json
