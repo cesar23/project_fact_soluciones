@@ -30,7 +30,7 @@
 
 
     /**
-     * Class Controller
+     * Class Controllers
      *
      * @package App\Http\Controllers
      * @mixin BaseController
@@ -136,7 +136,7 @@
          */
         public function searchItems(Request $request)
         {
-            
+
             $items = SearchItemController::getItemsToDocuments($request);
 
             return compact('items');
@@ -306,10 +306,10 @@ $string = var_export($header,true);
                 'message' => $message,
             ];
         }
-        
-        
+
+
         /**
-         * 
+         *
          * Obtener datos temporales de imagen cargada
          *
          * @param  Request $request
@@ -320,9 +320,9 @@ $string = var_export($header,true);
             return app(ItemControllerMobileApp::class)->uploadTempImage($request);
         }
 
-        
+
         /**
-         * 
+         *
          * Nombre para reportes
          *
          * @param  string $base_name
@@ -334,9 +334,9 @@ $string = var_export($header,true);
             return $base_name.'_'.Carbon::now().'.'.$format;
         }
 
-                
+
         /**
-         * 
+         *
          * Datos para cabecera de reportes
          *
          * @return array
@@ -347,10 +347,10 @@ $string = var_export($header,true);
 
             return compact('company');
         }
-        
-  
+
+
         /**
-         * 
+         *
          * Obtener almacen asociado al usuario en sesion
          *
          * @return array
@@ -359,10 +359,10 @@ $string = var_export($header,true);
         {
             return Warehouse::where('establishment_id', auth()->user()->establishment_id)->selectBasicColumns()->firstOrFail();
         }
-        
+
 
         /**
-         * 
+         *
          * @param  string $filename
          * @return array
          */
@@ -371,9 +371,9 @@ $string = var_export($header,true);
             return GeneralPdfHelper::pdfResponseFileHeaders($filename);
         }
 
-                
+
         /**
-         * 
+         *
          * Verificar si es una factura o boleta
          *
          * @param  string $document_type_id
@@ -384,9 +384,9 @@ $string = var_export($header,true);
             return in_array($document_type_id, ['01', '03'], true);
         }
 
-        
+
         /**
-         * 
+         *
          * Descripcion del tipo de documento
          *
          * @return string
@@ -399,8 +399,8 @@ $string = var_export($header,true);
 
             throw new Exception('El tipo de documento no existe');
         }
-        
-            
+
+
         /**
          *
          * @param  Exception $exception
