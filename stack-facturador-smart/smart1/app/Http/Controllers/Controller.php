@@ -30,7 +30,7 @@
 
 
     /**
-     * Class Controllers
+     * Class Controller
      *
      * @package App\Http\Controllers
      * @mixin BaseController
