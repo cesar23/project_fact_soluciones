@@ -1,8 +1,15 @@
 
 ## 📋 COMANDOS MANUALES DE DESPLIEGUE
 
+clonar repositorio:
+```shell
+git clone git@github.com:cesar23/project_fact_soluciones.git
+```
+
+
 crear network
 ```shell
+
 NETWORK_NAME="proxynet"
 SUBNET="172.50.0.0/16"
 GATEWAY="172.50.0.1"
@@ -21,6 +28,7 @@ docker network create \
     --label "environment=production" \
     --label "description=Red compartida para servicios de facturación" \
     "${NETWORK_NAME}"
+    
 ```
 
 ### PASO 0: DETENER TODOS LOS SERVICIOS
@@ -100,7 +108,8 @@ sleep 10
 
 ```bash
 # ruta dodne esta el facturador
-PROJECT_PATH="/home/cesar/docker-stacks/project_fact_soluciones/stack-facturador-smart/smart1"
+PROJECT_REPO="/home/cesar/docker-stacks/project_fact_soluciones"
+PROJECT_PATH_SMART="${PROJECT_REPO}/stack-facturador-smart/smart1"
 DB_ROOT_PASSWORD="WPsOd4xPLL4nGRnOAHJp"
 DB_NAME="smart1"
 # ═══════════════════════════════════════════════════════════════
@@ -141,12 +150,22 @@ docker exec fpm1 php artisan config:cache
 # ═══════════════════════════════════════════════════════════════
 # PASO 4: CONFIGURAR PERMISOS
 # ═══════════════════════════════════════════════════════════════
-cd "${PROJECT_PATH}"
+cd "${PROJECT_PATH_SMART}"
 sudo chmod -R 777 "./storage/" "./bootstrap/" "./vendor/"  "./public/"
 unzip .git.zip
 # ═══════════════════════════════════════════════════════════════
-# PASO 5: Entrar a la web
+# PASO 5: Habilitar los otros stacks
 # ═══════════════════════════════════════════════════════════════
+# activar las variables de entorno
+cp "${PROJECT_REPO}/stack-facturador-smart/cloudflare/.env.example" "${PROJECT_REPO}/stack-facturador-smart/cloudflare/.env" 
+cp "${PROJECT_REPO}/stack-facturador-smart/npm/.env.example" "${PROJECT_REPO}/stack-facturador-smart/npm/.env" 
+cp "${PROJECT_REPO}/stack-facturador-smart/portainer/.env.example" "${PROJECT_REPO}/stack-facturador-smart/portainer/.env" 
+cp "${PROJECT_REPO}/stack-facturador-smart/utils/.env.example" "${PROJECT_REPO}/stack-facturador-smart/utils/.env" 
+# levantar los stacks
+docker compose -f "${PROJECT_REPO}/stack-facturador-smart/cloudflare/docker-compose.yml" up -d
+docker compose -f "${PROJECT_REPO}/stack-facturador-smart/npm/docker-compose.yml" up -d
+docker compose -f "${PROJECT_REPO}/stack-facturador-smart/portainer/docker-compose.yml" up -d
+docker compose -f "${PROJECT_REPO}/stack-facturador-smart/utils/docker-compose.yml" up -d
 
 https://fact.solucionessystem.com
 

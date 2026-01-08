@@ -34,7 +34,8 @@ git lfs track "*.tar.gz"
 git add .
 git commit -m "Configure gitignore and LFS tracking 1.1"
 git lfs push origin master && git push origin master
-
+# o
+# git lfs push --all origin master
 ```
 
 ## 2. Clonar repositorio en otro Servidor Primera vez
