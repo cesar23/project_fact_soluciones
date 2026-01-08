@@ -167,6 +167,13 @@ docker compose -f "${PROJECT_REPO}/stack-facturador-smart/npm/docker-compose.yml
 docker compose -f "${PROJECT_REPO}/stack-facturador-smart/portainer/docker-compose.yml" up -d
 docker compose -f "${PROJECT_REPO}/stack-facturador-smart/utils/docker-compose.yml" up -d
 
+# ═══════════════════════════════════════════════════════════════
+# configurar Nginx ProxyManager
+# ═══════════════════════════════════════════════════════════════
+# Crear los dominios
+#      3_PROXY_MANAGER.md
+
+
 https://fact.solucionessystem.com
 
 # ═══════════════════════════════════════════════════════════════
@@ -186,6 +193,9 @@ git fetch origin master
 git reset --hard origin/master
 
 
+# ═══════════════════════════════════════════════════════════════
+# END
+# ═══════════════════════════════════════════════════════════════
 
 
 
