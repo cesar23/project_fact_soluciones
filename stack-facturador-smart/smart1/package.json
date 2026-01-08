@@ -1,6 +1,7 @@
 {
     "private": true,
     "scripts": {
+        "comment": "version 1.0.2",
         "development": "mix",
         "watch": "node --max-old-space-size=10000 ./node_modules/laravel-mix/bin/cli.js watch",
         "watch-poll": "mix watch -- --watch-options-poll=1000",
