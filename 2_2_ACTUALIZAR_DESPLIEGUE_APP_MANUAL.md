@@ -2,6 +2,10 @@
 ## 📋 Opcion 1 - Descargar solo los  cambios
 
 ```shell
+cd /home/cesar/docker-stacks/project_fact_soluciones
+```
+
+```shell
 # fetch - 1. descargar cambios
 git fetch
 # fetch - 2. ver cambios descargados
