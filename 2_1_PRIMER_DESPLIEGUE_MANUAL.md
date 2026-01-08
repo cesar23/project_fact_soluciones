@@ -59,8 +59,7 @@ git fetch origin master
 # Aplicar cambios locales (⚠️ CUIDADO: esto sobrescribe cambios locales)
 git reset --hard origin/master
 
-# ponemos el archivo de configuracion
-cp "stack-facturador-smart/cloudflare/.env.example" "stack-facturador-smart/cloudflare/.env" 
+
 ```
 
 ### PASO 2: PERMISOS DE SCRIPTS
@@ -78,6 +77,12 @@ chmod +x devops_upload_changes.sh
 ```bash
 # Ejecutar script de descompresión (si existe smart1.tar.gz)
 ./stack-facturador-smart/smart1_decompress.sh
+```
+
+### PASO 3.2: Restaurar variables de entorno
+```shell
+# ponemos el archivo de configuracion
+cp "stack-facturador-smart/cloudflare/.env.example" "stack-facturador-smart/cloudflare/.env" 
 ```
 
 ### PASO 4: PERMISOS DE CARPETAS

@@ -40,28 +40,28 @@ composer.phar
 # ==================================================
 # OMIT DIRS SMART
 # ==================================================
-/stack-facturador-smart/smart1/.env
-/stack-facturador-smart/smart1/storage/app
-/stack-facturador-smart/smart1/storage/debugbar
-/stack-facturador-smart/smart1/storage/framework
-/stack-facturador-smart/smart1/storage/logs
-/stack-facturador-smart/smart1/storage/smart
-/stack-facturador-smart/smart1/storage/uploads
+./stack-facturador-smart/smart1/.env
+./stack-facturador-smart/smart1/storage/app
+./stack-facturador-smart/smart1/storage/debugbar
+./stack-facturador-smart/smart1/storage/framework
+./stack-facturador-smart/smart1/storage/logs
+./stack-facturador-smart/smart1/storage/smart
+./stack-facturador-smart/smart1/storage/uploads
 
 # directorios a obiar de public
-/stack-facturador-smart/smart1/public/js
-/stack-facturador-smart/smart1/public/tinymce
-/stack-facturador-smart/smart1/public/templates
-/stack-facturador-smart/smart1/public/qz
-/stack-facturador-smart/smart1/public/porto-light
-/stack-facturador-smart/smart1/public/porto-ecommerce
-/stack-facturador-smart/smart1/public/liveapp
-/stack-facturador-smart/smart1/public/json
-/stack-facturador-smart/smart1/public/images
-/stack-facturador-smart/smart1/public/img
-/stack-facturador-smart/smart1/public/formats
-/stack-facturador-smart/smart1/public/fonts
-/stack-facturador-smart/smart1/public/css
-/stack-facturador-smart/smart1/public/acorn_dashboard
-/stack-facturador-smart/smart1/public/acorn
+./stack-facturador-smart/smart1/public/js
+./stack-facturador-smart/smart1/public/tinymce
+./stack-facturador-smart/smart1/public/templates
+./stack-facturador-smart/smart1/public/qz
+./stack-facturador-smart/smart1/public/porto-light
+./stack-facturador-smart/smart1/public/porto-ecommerce
+./stack-facturador-smart/smart1/public/liveapp
+./stack-facturador-smart/smart1/public/json
+./stack-facturador-smart/smart1/public/images
+./stack-facturador-smart/smart1/public/img
+./stack-facturador-smart/smart1/public/formats
+./stack-facturador-smart/smart1/public/fonts
+./stack-facturador-smart/smart1/public/css
+./stack-facturador-smart/smart1/public/acorn_dashboard
+./stack-facturador-smart/smart1/public/acorn
 
