@@ -38,9 +38,15 @@ composer.phar
 *.rar
 
 # ==================================================
+# OMIT ROOT FILES
+# ==================================================
+.env
+
+# ==================================================
 # OMIT DIRS SMART
 # ==================================================
 stack-facturador-smart/smart1/.env
+stack-facturador-smart/smart1/composer.json
 stack-facturador-smart/smart1/storage/app
 stack-facturador-smart/smart1/storage/debugbar
 stack-facturador-smart/smart1/storage/framework
