@@ -40,6 +40,7 @@ composer.phar
 # ==================================================
 # OMIT DIRS SMART
 # ==================================================
+/stack-facturador-smart/smart1/.env
 /stack-facturador-smart/smart1/storage/app
 /stack-facturador-smart/smart1/storage/debugbar
 /stack-facturador-smart/smart1/storage/framework

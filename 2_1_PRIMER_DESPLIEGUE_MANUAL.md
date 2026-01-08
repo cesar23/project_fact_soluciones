@@ -58,6 +58,9 @@ git fetch origin master
 
 # Aplicar cambios locales (⚠️ CUIDADO: esto sobrescribe cambios locales)
 git reset --hard origin/master
+
+# ponemos el archivo de configuracion
+cp "stack-facturador-smart/cloudflare/.env.example" "stack-facturador-smart/cloudflare/.env" 
 ```
 
 ### PASO 2: PERMISOS DE SCRIPTS
