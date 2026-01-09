@@ -82,7 +82,7 @@ chmod +x devops_upload_changes.sh
 ### PASO 3.2: Restaurar variables de entorno
 ```shell
 # ponemos el archivo de configuracion
-cp "stack-facturador-smart/cloudflare/.env.example" "stack-facturador-smart/cloudflare/.env" 
+cp "stack-facturador-smart/smart1/.env.example" "stack-facturador-smart/smart1/.env" 
 ```
 
 ### PASO 4: PERMISOS DE CARPETAS
@@ -161,6 +161,13 @@ docker exec fpm1 php artisan config:cache
 cd "${PROJECT_PATH_SMART}"
 sudo chmod -R 777 "./storage/" "./bootstrap/" "./vendor/"  "./public/"
 unzip .git.zip
+
+# ═══════════════════════════════════════════════════════════════
+# PASO 4.2: CONFIGURAR PERMISOS
+# ═══════════════════════════════════════════════════════════════
+
+git reset --hard origin/master
+
 # ═══════════════════════════════════════════════════════════════
 # PASO 5: Habilitar los otros stacks
 # ═══════════════════════════════════════════════════════════════

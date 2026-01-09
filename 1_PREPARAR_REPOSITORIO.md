@@ -1,6 +1,8 @@
 
 ## 1. Resumen de Comandos para Preparar. Repositorio para  subir ficheros  grandes
 
+
+verison 1.0.1
 ```shell
 # 1. Instalación de Git LFS
 winget install GitHub.GitLFS
